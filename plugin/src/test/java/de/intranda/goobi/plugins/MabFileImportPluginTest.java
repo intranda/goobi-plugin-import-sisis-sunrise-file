@@ -27,7 +27,7 @@ import de.sub.goobi.config.ConfigPlugins;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ ConfigPlugins.class })
 @PowerMockIgnore({ "javax.management.*", "javax.net.ssl.*" })
-public class SampleImportPluginTest {
+public class MabFileImportPluginTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -51,7 +51,7 @@ public class SampleImportPluginTest {
 
     @Test
     public void testConstructor() {
-        SampleImportPlugin plugin = new SampleImportPlugin();
+        MabFileImportPlugin plugin = new MabFileImportPlugin();
         assertNotNull(plugin);
         assertEquals(ImportType.FILE, plugin.getImportTypes().get(0));
         plugin.setImportFolder(tempFolder.getAbsolutePath());
