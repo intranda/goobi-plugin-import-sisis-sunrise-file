@@ -1,0 +1,15 @@
+<config_plugin>
+	<config>
+
+		<!-- which workflow template shall be used -->
+		<template>*</template>
+
+		<!-- which digital collection to use 
+		<collection>General</collection> 
+		-->
+
+		<!-- define if import shall use GoobiScript to run in the background -->
+		<runAsGoobiScript>true</runAsGoobiScript>
+
+	</config>
+</config_plugin>
