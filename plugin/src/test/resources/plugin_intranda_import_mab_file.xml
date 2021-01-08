@@ -12,7 +12,7 @@
 		<runAsGoobiScript>true</runAsGoobiScript>
 
         <!-- Ruleset for the MM files: -->
-        <rulesetPath>/home/joel/git/rechtsgeschichte/data/new-ruleset-mpi.xml</rulesetPath>
+        <rulesetPath>src/test/resources/ruleset-mpi.xml</rulesetPath>
 
         <!-- Path to images: -->
         <imagePathFile>/home/joel/git/rechtsgeschichte/privrecht/test/priv-images</imagePathFile>
