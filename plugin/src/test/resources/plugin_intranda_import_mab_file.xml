@@ -21,7 +21,7 @@
         <outputPath>/home/joel/git/rechtsgeschichte/test_import/</outputPath>
 
         <!-- Ruleset for the MM files: -->
-        <tags>/home/joel/git/rechtsgeschichte/data/tags-all.txt</tags>
+        <tags>src/test/resources/tags-all.txt</tags>
 
         <!-- Use SGML files? -->
         <withSGML>false</withSGML>
