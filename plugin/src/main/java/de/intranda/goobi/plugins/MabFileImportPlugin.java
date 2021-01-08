@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Type;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
 import org.apache.commons.lang.StringUtils;
+import org.goobi.beans.Process;
 import org.goobi.production.enums.ImportReturnValue;
 import org.goobi.production.enums.ImportType;
 import org.goobi.production.enums.PluginType;
@@ -34,7 +37,10 @@ import com.google.gson.reflect.TypeToken;
 
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.MassImportForm;
+import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.ImportPluginException;
+import de.sub.goobi.helper.exceptions.SwapException;
+import de.sub.goobi.persistence.managers.ProcessManager;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
@@ -43,6 +49,7 @@ import ugh.dl.Fileformat;
 import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
+import ugh.exceptions.WriteException;
 
 @PluginImplementation
 @Log4j2
@@ -258,6 +265,32 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 io.setMetsFilename(fileName);
                 fileformat.write(fileName);
                 io.setImportReturnValue(ImportReturnValue.ExportFinished);
+                
+                
+                
+//                // check if the process exists
+//                if (replaceExisting) {
+//                    boolean dataReplaced = false;
+//                    Process existingProcess = ProcessManager.getProcessByExactTitle(io.getProcessTitle());
+//                    if (existingProcess != null) {
+//                        try {
+//                            existingProcess.writeMetadataFile(ff);
+//                            //                            existingProcess.setErstellungsdatum(new Date());
+//                            dataReplaced = true;
+//                        } catch (WriteException | PreferencesException | IOException | InterruptedException | SwapException | DAOException e) {
+//                            log.error(e);
+//                        }
+//
+//                        Path sourceRootFolder = Paths.get(record.getData());
+//                        moveImageIntoProcessFolder(existingProcess, sourceRootFolder);
+//                    }
+//                    if (dataReplaced) {
+//                        // TODO delete mets file, anchor file, image folder
+//                        answer.remove(io);
+//                        continue;
+//                    }
+//                }
+//                
                 
             } catch (IOException | UGHException | JDOMException e) {
                 log.error("Error while creating Goobi processes in the MabFileImportPlugin", e);
