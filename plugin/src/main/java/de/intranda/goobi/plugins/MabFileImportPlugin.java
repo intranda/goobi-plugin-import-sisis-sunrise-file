@@ -1,17 +1,22 @@
 package de.intranda.goobi.plugins;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.goobi.production.enums.ImportReturnValue;
 import org.goobi.production.enums.ImportType;
@@ -21,6 +26,11 @@ import org.goobi.production.importer.ImportObject;
 import org.goobi.production.importer.Record;
 import org.goobi.production.plugin.interfaces.IImportPluginVersion2;
 import org.goobi.production.properties.ImportProperty;
+import org.jdom2.JDOMException;
+import org.xml.sax.SAXException;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.MassImportForm;
@@ -29,16 +39,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
-import ugh.dl.DigitalDocument;
-import ugh.dl.DocStruct;
-import ugh.dl.DocStructType;
 import ugh.dl.Fileformat;
-import ugh.dl.Metadata;
-import ugh.dl.MetadataType;
-import ugh.dl.Person;
 import ugh.dl.Prefs;
+import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
-import ugh.fileformats.mets.MetsMods;
 
 @PluginImplementation
 @Log4j2
@@ -73,14 +77,29 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
     private String workflowTitle;
 
     private boolean runAsGoobiScript = false;
-    private String collection;
+//    private String collection;
+
+    SubnodeConfiguration myconfig;
+    private MakeVolumeMap volMaker;
+    private MakeMetsMods mmMaker;
 
     /**
      * define what kind of import plugin this is
+     * 
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @throws ConfigurationException
+     * @throws PreferencesException
      */
-    public MabFileImportPlugin() {
+    public MabFileImportPlugin() throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
         importTypes = new ArrayList<>();
         importTypes.add(ImportType.FILE);
+
+        readConfig();
+
+        volMaker = new MakeVolumeMap(myconfig);
+        mmMaker = new MakeMetsMods(myconfig);
     }
 
     /**
@@ -91,7 +110,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         xmlConfig.setExpressionEngine(new XPathExpressionEngine());
         xmlConfig.setReloadingStrategy(new FileChangedReloadingStrategy());
 
-        SubnodeConfiguration myconfig = null;
         try {
             myconfig = xmlConfig.configurationAt("//config[./template = '" + workflowTitle + "']");
         } catch (IllegalArgumentException e) {
@@ -100,13 +118,12 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
         if (myconfig != null) {
             runAsGoobiScript = myconfig.getBoolean("/runAsGoobiScript", false);
-            collection = myconfig.getString("/collection", "");
+//            collection = myconfig.getString("/collection", "");
         }
     }
 
     /**
-     * This method is used to generate records based on the imported data
-     * these records will then be used later to generate the Goobi processes
+     * This method is used to generate records based on the imported data these records will then be used later to generate the Goobi processes
      */
     @Override
     public List<Record> generateRecordsFromFile() {
@@ -115,49 +132,76 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         }
         readConfig();
 
-        // the list where the records are stored
         List<Record> recordList = new ArrayList<>();
 
+        InputStream fileInputStream = null;
         try {
-            // read the file in to generate the records
-            String content = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
-        
-            // run through the content line by line
-            String lines[] = content.split("\\r?\\n");
+            String text = ParsingUtils.readFileToString(file);
 
-            // generate a record for each process to be created
-            for (String line : lines) {
-                
-                // Split the string and generate a hashmap for all needed metadata
-                String fields[] = line.split(";");
-                HashMap<String, String> map = new HashMap<String, String>();
-                String id = fields[0].trim();
-                
-                // put all fields into the hashmap
-                map.put("ID", id);
-                map.put("Author first name", fields[1].trim());
-                map.put("Author last name", fields[2].trim());
-                map.put("Title", fields[3].trim());
-                map.put("Year", fields[4].trim());
-                
-                // create a record and put the hashmap with data to it
-                Record r = new Record();
-                r.setId(id);
-                r.setObject(map);
-                recordList.add(r);                
+            if ((text != null) && (text.length() != 0)) {
+
+                BufferedReader reader = new BufferedReader(new StringReader(text));
+                String str = "";
+                String strCurrent = "";
+                String strId = "";
+
+                int iLine = 0;
+
+                while ((str = reader.readLine()) != null) {
+                    str = str.trim();
+
+                    strCurrent += str;
+                    strCurrent += System.lineSeparator();
+
+                    if (str.length() < 4) {
+                        continue;
+                    }
+
+                    String tag = str.substring(0, 4);
+
+                    if (str.length() > 5) {
+
+                        // Data field
+                        int iValue = str.indexOf(":");
+                        String content = str.substring(iValue + 1, str.length());
+
+                        //Id:
+                        if (tag.contentEquals("0000")) {
+                            strId = myconfig.getString("idPrefix", "") + content;
+                        }
+                    }
+
+                    //finished one ?
+                    if (tag.startsWith("9999")) {
+
+                        Record r = new Record();
+                        r.setId(strId);
+                        r.setData(strCurrent);
+                        recordList.add(r);
+
+                        strCurrent = "";
+                        strId = "";
+                    }
+                }
             }
-        
-        } catch (IOException e) {
-            log.error("Error while reading the uploaded file", e);
+
+        } catch (Exception e) {
+            log.error(e);
+        } finally {
+            if (fileInputStream != null) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    log.error(e);
+                }
+            }
         }
 
-        // return the list of all generated records
         return recordList;
     }
 
     /**
-     * This method is used to actually create the Goobi processes
-     * this is done based on previously created records
+     * This method is used to actually create the Goobi processes this is done based on previously created records
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -167,95 +211,62 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         }
         readConfig();
 
-        // some general preparations
-        DocStructType physicalType = prefs.getDocStrctTypeByName("BoundBook");
-        DocStructType logicalType = prefs.getDocStrctTypeByName("Monograph");
-        MetadataType pathimagefilesType = prefs.getMetadataTypeByName("pathimagefiles");
+        //First make a parent-child map:
+        for (Record rec : records) {
+            String strText = rec.getData();
+            try {
+                volMaker.addTextToMap(strText);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        volMaker.makeReverseMap();
+
+        Gson gson = new Gson();
+        Type typeMap = new TypeToken<HashMap<String, List<String>>>() {
+        }.getType();
+        Type typeRevMap = new TypeToken<HashMap<String, String>>() {
+        }.getType();
+
+        mmMaker.map = gson.fromJson(volMaker.getMapGson(), typeMap);
+        mmMaker.mapRev = gson.fromJson(volMaker.getRevMapGson(), typeRevMap);
+
+        //collect parents:
+        for (Record rec : records) {
+            String strText = rec.getData();
+            try {
+                mmMaker.collectMultiVolumeWorksFromText(strText);
+            } catch (IOException | UGHException | JDOMException e) {
+                log.error("Error while creating collecting parents in the MabFileImportPlugin", e);
+            }
+        }
+        
         List<ImportObject> answer = new ArrayList<>();
 
-        // run through all records and create a Goobi process for each of it
-        for (Record record : records) {
+        //then save the mms:
+        for (Record rec : records) {
+            
             ImportObject io = new ImportObject();
-
-            String id = record.getId().replaceAll("\\W", "_");
-            HashMap<String, String> map = (HashMap<String, String>) record.getObject();
-
-            // create a new mets file
+            
+            String strText = rec.getData();
             try {
-                Fileformat fileformat = new MetsMods(prefs);
-
-                // create digital document
-                DigitalDocument dd = new DigitalDocument();
-                fileformat.setDigitalDocument(dd);
-
-                // create physical DocStruct
-                DocStruct physical = dd.createDocStruct(physicalType);
-                dd.setPhysicalDocStruct(physical);
-
-                // set imagepath
-                Metadata newmd = new Metadata(pathimagefilesType);
-                newmd.setValue("/images/");
-                physical.addMetadata(newmd);
-
-                // create logical DocStruct
-                DocStruct logical = dd.createDocStruct(logicalType);
-                dd.setLogicalDocStruct(logical);
-
-                // create metadata field for CatalogIDDigital with cleaned value
-                Metadata md1 = new Metadata(prefs.getMetadataTypeByName("CatalogIDDigital"));
-                md1.setValue(map.get("ID").replaceAll("\\W", "_"));
-                logical.addMetadata(md1);
-
-                // create metadata field for main title
-                Metadata md2 = new Metadata(prefs.getMetadataTypeByName("TitleDocMain"));
-                md2.setValue(map.get("Title"));
-                logical.addMetadata(md2);
+                Fileformat fileformat = mmMaker.saveMMsFromText(strText);
                 
-                // create metadata field for year
-                Metadata md3 = new Metadata(prefs.getMetadataTypeByName("PublicationYear"));
-                md3.setValue(map.get("Year"));
-                logical.addMetadata(md3);
-                
-                // add author
-                Person per = new Person(prefs.getMetadataTypeByName("Author"));
-                per.setFirstname(map.get("Author first name"));
-                per.setLastname(map.get("Author last name"));
-                //per.setRole("Author");
-                logical.addPerson(per);
-
-                // create metadata field for configured digital collection
-                MetadataType typeCollection = prefs.getMetadataTypeByName("singleDigCollection");
-                if (StringUtils.isNotBlank(collection)) {
-                    Metadata mdc = new Metadata(typeCollection);
-                    mdc.setValue(collection);
-                    logical.addMetadata(mdc);
-                }
-
-                // and add all collections that where selected
-                if (form != null) {
-                    for (String c : form.getDigitalCollections()) {
-                        if (!c.equals(collection.trim())) {
-                            Metadata md = new Metadata(typeCollection);
-                            md.setValue(c);
-                            logical.addMetadata(md);
-                        }
-                    }
-                }
-
-                // set the title for the Goobi process
-                io.setProcessTitle(id);
-                String fileName = getImportFolder() + File.separator + io.getProcessTitle() + ".xml";
+                io.setProcessTitle(rec.getId());
+                String fileName = getImportFolder() + io.getProcessTitle() + ".xml";
                 io.setMetsFilename(fileName);
                 fileformat.write(fileName);
                 io.setImportReturnValue(ImportReturnValue.ExportFinished);
-            } catch (UGHException e) {
+                
+            } catch (IOException | UGHException | JDOMException e) {
                 log.error("Error while creating Goobi processes in the MabFileImportPlugin", e);
                 io.setImportReturnValue(ImportReturnValue.WriteError);
             }
-
-            // now add the process to the list
+            
             answer.add(io);
         }
+
         return answer;
     }
 
