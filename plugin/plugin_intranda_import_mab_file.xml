@@ -1,27 +1,23 @@
 <config_plugin>
-	<config>
+    <config>
 
-		<!-- which workflow template shall be used -->
-		<template>*</template>
+        <!-- which workflow template shall be used -->
+        <template>*</template>
 
-		<!-- which digital collection to use 
-		<collection>General</collection> 
-		-->
-
-		<!-- define if import shall use GoobiScript to run in the background -->
-		<runAsGoobiScript>true</runAsGoobiScript>
+        <!-- define if import shall use GoobiScript to run in the background -->
+        <runAsGoobiScript>true</runAsGoobiScript>
 
         <!-- Ruleset for the MM files: -->
-        <rulesetPath>/home/joel/git/rechtsgeschichte/data/new-ruleset-mpi.xml</rulesetPath>
+        <rulesetPath>src/test/resources/ruleset.xml</rulesetPath>
 
         <!-- Path to images: -->
-        <imagePathFile>/home/joel/git/rechtsgeschichte/privrecht/test/priv-images</imagePathFile>
+        <imagePathFile>/opt/digiverso/import/images</imagePathFile>
 
         <!-- Folder where the files are to be copied -->
-        <outputPath>/home/joel/git/rechtsgeschichte/test_import/</outputPath>
+        <outputPath>/opt/digiverso/import/test_import/</outputPath>
 
         <!-- Ruleset for the MM files: -->
-        <tags>/home/joel/git/rechtsgeschichte/data/tags-all.txt</tags>
+        <tags>/opt/digiverso/import/tags.txt</tags>
 
         <!-- Use SGML files? -->
         <withSGML>false</withSGML>
@@ -37,20 +33,16 @@
         <singleDigCollection>Disserationen test</singleDigCollection>
 
        <!-- Mapping for MultiVolumeWork to child Volumes: -->
-       <mapMVW>/opt/digiverso/import/dissertationen/data/map.txt</mapMVW>
+       <mapMVW>/opt/digiverso/import/test_import/map.txt</mapMVW>
     
        <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
-       <mapChildren>/opt/digiverso/import/dissertationen/data/reverseMap.txt</mapChildren>
-
-       <!-- For testing: stop the import after this many folders have been created. If 0, then import all.-->
-       <importFirst>10</importFirst>
-
-       <!-- List of IDs to import. If empty, import all files -->
-       <listIDs>/opt/digiverso/import/dissertationen/data/missing-image-ids.txt</listIDs>
+       <mapChildren>//opt/digiverso/import/test_import/reverseMap.txt</mapChildren>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpirg_sisis_</idPrefix>
         
+        <!-- Remove the image files from their original folders -->   
         <moveFiles>false</moveFiles>
-	</config>
+        
+    </config>
 </config_plugin>

@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +39,7 @@ import com.google.gson.reflect.TypeToken;
 
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.MassImportForm;
+import de.sub.goobi.helper.StorageProvider;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.ImportPluginException;
 import de.sub.goobi.helper.exceptions.SwapException;
@@ -264,8 +267,15 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 String fileName = getImportFolder() + io.getProcessTitle() + ".xml";
                 io.setMetsFilename(fileName);
                 fileformat.write(fileName);
-                io.setImportReturnValue(ImportReturnValue.ExportFinished);
                 
+                // copy all files with new folder names
+                String imagefolder = myconfig.getString("outputPath") + rec.getId();
+                String strPrefix = myconfig.getString("idPrefix", "");
+                imagefolder = imagefolder.replace(strPrefix, "");
+                
+                moveSourceData(imagefolder, io.getProcessTitle());
+                
+                io.setImportReturnValue(ImportReturnValue.ExportFinished);
                 
                 
 //                // check if the process exists
@@ -303,6 +313,97 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         return answer;
     }
 
+    
+    private void moveSourceData(String source, String strProcessTitle) throws IOException {
+        Path destinationRootFolder = Paths.get(importFolder, strProcessTitle);
+        Path destinationImagesFolder = Paths.get(destinationRootFolder.toString(), "images");
+
+        Path sourceRootFolder = Paths.get(source);
+        Path sourceImageFolder = Paths.get(sourceRootFolder.toString(), "images");
+
+        if (!Files.exists(destinationRootFolder)) {
+            try {
+                Files.createDirectories(destinationRootFolder);
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+
+        // images
+        if (Files.exists(sourceImageFolder)) {
+            if (!Files.exists(destinationImagesFolder)) {
+                try {
+                    Files.createDirectories(destinationImagesFolder);
+                } catch (IOException e) {
+                    log.error(e);
+                }
+            }
+            List<Path> dataInSourceImageFolder = StorageProvider.getInstance().listFiles(sourceImageFolder.toString());
+
+            for (Path currentData : dataInSourceImageFolder) {
+                if (Files.isDirectory(currentData)) {
+                    try {
+                        moveFolder(currentData, destinationImagesFolder);
+                    } catch (IOException e) {
+                        log.error(e);
+                        throw e;
+                    }
+                } else {
+                    try {
+                        moveFile(currentData, Paths.get(destinationImagesFolder.toString(), currentData.getFileName().toString()));
+                    } catch (IOException e) {
+                        log.error(e);
+                        throw e;
+                    }
+                }               
+            }
+        }
+    }
+    
+    private void moveFolder(Path currentData, Path destinationFolder) throws IOException {
+        Path destinationSubFolder;
+
+//        if (currentData.getFileName().toString().equals(prefixInSource + processTitleInSource + suffixInSource)) {
+//            destinationSubFolder = Paths.get(destinationFolder.toString(), prefixInDestination + processTitleDestination + suffixInDestination);
+//
+//        } else if (currentData.getFileName().toString().equals(processTitleInSource + suffixInSource)) {
+//            destinationSubFolder = Paths.get(destinationFolder.toString(), processTitleDestination + suffixInDestination);
+//        } else {
+//            // get suffix
+            String foldername = currentData.getFileName().toString();
+//            if (foldername.startsWith(processTitleInSource) && foldername.contains("_")) {
+//                String suffix = foldername.substring(foldername.lastIndexOf("_"));
+//                destinationSubFolder = Paths.get(destinationFolder.toString(), processTitleDestination + suffix);
+//            } else {
+                destinationSubFolder = Paths.get(destinationFolder.toString(), foldername);
+//            }
+//        }
+        if (!Files.exists(destinationSubFolder)) {
+            Files.createDirectories(destinationSubFolder);
+        }
+
+//        if (moveFiles) {
+            Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
+//        } else {
+//            List<Path> files = StorageProvider.getInstance().listFiles(currentData.toString());
+//            for (Path p : files) {
+//                copyFile(p, Paths.get(destinationSubFolder.toString(), p.getFileName().toString()));
+//            }
+//            //            NIOFileUtils.copyDirectory(currentData, destinationSubFolder);
+////        }
+
+    }
+
+    private void moveFile(Path file, Path destination) throws IOException {
+
+//        if (moveFiles) {
+            Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
+//        } else {
+//            Files.copy(file, destination, StandardCopyOption.REPLACE_EXISTING);
+//        }
+
+    }
+    
     /**
      * decide if the import shall be executed in the background via GoobiScript or not
      */

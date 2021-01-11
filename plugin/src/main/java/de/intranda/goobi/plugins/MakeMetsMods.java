@@ -155,7 +155,7 @@ public class MakeMetsMods {
         }
 
         metaMaker = new MetadataMaker(prefs);
-        
+
         readTagsList();
     }
 
@@ -394,10 +394,10 @@ public class MakeMetsMods {
         String text = ParsingUtils.readFileToString(new File(mabFile));
         saveMMsFromText(text);
     }
-    
+
     //Only returns the last MetsMods.
     public MetsMods saveMMsFromText(String text) throws IOException, UGHException, JDOMException {
-    
+
         int iImported = 0;
         String strFolder = config.getString(strOutputPath);
         if (!strFolder.endsWith("/")) {
@@ -405,7 +405,7 @@ public class MakeMetsMods {
         }
 
         MetsMods mm = null;
-        
+
         if ((text != null) && (text.length() != 0)) {
 
             mm = makeMM(config.getString("defaultPublicationType"));
@@ -648,13 +648,13 @@ public class MakeMetsMods {
                     // TODO: handle exception
                     System.out.println("Problem with " + strCurrentId + " at line " + iLine);
                     System.out.println(e.getMessage());
-                    
+
                     iLine++;
                 }
             }
 
         }
-        
+
         return mm;
     }
 
@@ -746,7 +746,7 @@ public class MakeMetsMods {
      */
     private DocStruct getAndSavePage(String strDatei, MetsMods mm, DocStruct page, String strCurrentId) throws UGHException, IOException {
 
-        File file = getImageFile(strDatei);
+        File file = getImageFile(strDatei, strCurrentId);
         if (file == null || !file.exists()) {
 
             if (boVerbose) {
@@ -845,13 +845,30 @@ public class MakeMetsMods {
 
     }
 
-    private File getImageFile(String strImage) {
+    private File getImageFile(String strImage, String strCurrentId) {
 
         String strFolder = strImage.substring(0, 4).toUpperCase();
         String strPath = config.getString(strImagePathFile) + strFolder + "/" + strImage;
         File file = new File(strPath);
-        return file;
 
+        if (file.exists()) {
+            return file;
+        }
+
+        //otherwise just look in folder:
+        strPath = config.getString(strImagePathFile);
+        if (!strPath.endsWith("/")) {
+            strPath = strPath + "/";
+        }
+        file = new File(strPath + strImage);
+        if (file.exists()) {
+            return file;
+        }
+
+        //otherwise look in folder named after the document:
+        strPath = strPath + strCurrentId + "/";
+        file = new File(strPath + strImage);
+        return file;
     }
 
     /**

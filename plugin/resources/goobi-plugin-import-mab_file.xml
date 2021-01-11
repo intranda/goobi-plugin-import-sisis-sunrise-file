@@ -1,112 +1,49 @@
-﻿
-﻿
-<config_plugin>
-	<config>
-		<!-- which projects to use for (can be more than one, otherwise use *) -->
-		<project>*</project>
+﻿<config_plugin>
+    <config>
 
-		<!-- Ruleset for the MM files: -->
-		<rulesetPath>/home/joel/git/rechtsgeschichte/data/ruleset.xml</rulesetPath>
+        <!-- which workflow template shall be used -->
+        <template>*</template>
 
-		<!-- Path to images: -->
-		<imagePathFile>/home/joel/git/rechtsgeschichte/20190211 Datenlieferung/Testdaten Dissertationen 2019-01/images/</imagePathFile>
+        <!-- define if import shall use GoobiScript to run in the background -->
+        <runAsGoobiScript>true</runAsGoobiScript>
 
-		<!-- Folder where the files are to be copied -->
-		<outputPath>/home/joel/git/rechtsgeschichte/testdiss/</outputPath>
+        <!-- Ruleset for the MM files: -->
+        <rulesetPath>src/test/resources/ruleset.xml</rulesetPath>
 
-		<!-- Mab file to read: -->
-		<mabFile>/home/joel/git/rechtsgeschichte/testdiss/Dissertationen_komplett.txt</mabFile>
+        <!-- Path to images: -->
+        <imagePathFile>/opt/digiverso/import/images</imagePathFile>
 
-		<!-- Ruleset for the MM files: -->
-		<tags>/home/joel/git/rechtsgeschichte/data/tags-full.txt</tags>
+        <!-- Folder where the files are to be copied -->
+        <outputPath>/opt/digiverso/import/test_import/</outputPath>
 
-		<!-- Use SGML files? -->
-		<withSGML>false</withSGML>
+        <!-- Ruleset for the MM files: -->
+        <tags>/opt/digiverso/import/tags.txt</tags>
 
-		<!-- Path to SGML files, if withSGML: -->
-		<sgmlPath></sgmlPath>
+        <!-- Use SGML files? -->
+        <withSGML>false</withSGML>
 
-
-		<!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
-		<defaultPublicationType>Monograph</defaultPublicationType>
-
-		<!-- Collection name -->
-		<singleDigCollection>Disserationen</singleDigCollection>
+        <!-- Path to SGML files, if withSGML: -->
+        <sgmlPath></sgmlPath>
 
 
-		<!-- For the import -->
-		<basedir>/home/joel/git/rechtsgeschichte/import/</basedir>
-		<prefixInDestination>master_</prefixInDestination>
-		<suffixInDestination>_media</suffixInDestination>
+        <!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
+        <defaultPublicationType>Monograph</defaultPublicationType>
 
-		<title>
-			<doctype doctypename="Monograph" processtitle="CatalogIDDigital" />
-		</title>
-
-		<moveFiles>true</moveFiles>
-
-	</config>
-
-	<config>
-		<!-- which projects to use for (can be more than one, otherwise use *) -->
-		<project>Privatr</project>
-		<project>Archive_Project</project>
-
-		<!-- Ruleset for the MM files: -->
-		<rulesetPath>/home/joel/git/rechtsgeschichte/data/ruleset.xml</rulesetPath>
-
-		<!-- Path to images: -->
-		<imagePathFile>/home/joel/git/rechtsgeschichte/20190211 Datenlieferung/Testdaten Privatrecht 2019-01/images/</imagePathFile>
-
-		<!-- Folder where the files are to be copied -->
-		<outputPath>/home/joel/git/rechtsgeschichte/testprivr/</outputPath>
-
-		<!-- Mab file to read: -->
-		<mabFile>/home/joel/git/rechtsgeschichte/testprivr/privatr-komplett.txt</mabFile>
-
-		<!-- Ruleset for the MM files: -->
-		<tags>/home/joel/git/rechtsgeschichte/data/tags-full.txt</tags>
-
-		<!-- Use SGML files? -->
-		<withSGML>true</withSGML>
-
-		<!-- Path to SGML files, if withSGML: -->
-		<sgmlPath>/home/joel/git/rechtsgeschichte/20200430 Datenlieferung/PrivatSGML/</sgmlPath>
-
-
-		<!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
-		<defaultPublicationType>Monograph</defaultPublicationType>
-
-		<!-- Collection name -->
-		<singleDigCollection>Privatrecht</singleDigCollection>
+        <!-- Collection name -->
+        <singleDigCollection>Disserationen test</singleDigCollection>
 
        <!-- Mapping for MultiVolumeWork to child Volumes: -->
-       <mapMVW>/opt/digiverso/import/dissertationen/data/map.txt</mapMVW>
+       <mapMVW>/opt/digiverso/import/test_import/map.txt</mapMVW>
     
        <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
-       <mapChildren>/opt/digiverso/import/dissertationen/data/reverseMap.txt</mapChildren>
-
-       <!-- For testing: stop the import after this many folders have been created. If 0, then import all.-->
-       <importFirst>10</importFirst>
-
-       <!-- List of IDs to import. If empty, import all files -->
-       <listIDs>/opt/digiverso/import/dissertationen/data/missing-image-ids.txt</listIDs>
+       <mapChildren>//opt/digiverso/import/test_import/reverseMap.txt</mapChildren>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpirg_sisis_</idPrefix>
-
-       <!-- For the import -->
-	    <basedir>/opt/digiverso/import/diss-mm/</basedir>
-    	<prefixInDestination>master_</prefixInDestination>
-       <suffixInDestination>_media</suffixInDestination>
-
-	    <title>
-	        <doctype doctypename="Monograph" processtitle="CatalogIDDigital" />
-	        <doctype doctypename="Volume" processtitle="CatalogIDDigital" />
-	        <doctype doctypename="MultiVolumeWork" processtitle="CatalogIDDigital" />
-	    </title>
-	
-	    <moveFiles>true</moveFiles>
-	
-	    </config>
-/config_plugin>
+        
+        <!-- Remove the image files from their original folders -->   
+        <moveFiles>false</moveFiles>
+        
+    </config>
+</config_plugin>
+	    
