@@ -90,7 +90,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
     
     /**
-     * define what kind of import plugin this is
+     * Import plugin for MAB files
      * 
      * @throws IOException
      * @throws SAXException

@@ -17,10 +17,8 @@ import com.google.gson.Gson;
 public class MakeVolumeMap {
 
     public ArrayList<String> lstFilesVol;
-    private ArrayList<String> lstTops;
     private ArrayList<String> lstChildren;
 
-    private String strIds = "";
     public String mapFile = "";
     public String reverseMapFile = "t";
     private HashMap<String, ArrayList<String>> map;
@@ -33,7 +31,6 @@ public class MakeVolumeMap {
      */
     public MakeVolumeMap(SubnodeConfiguration config) {
 
-        lstTops = new ArrayList<String>();
         lstFilesVol = new ArrayList<String>();
         lstChildren = new ArrayList<String>();
         map = new HashMap<String, ArrayList<String>>();
@@ -43,8 +40,6 @@ public class MakeVolumeMap {
 
             mapFile = config.getString("mapMVW");
             reverseMapFile = config.getString("mapChildren");
-
-            strIds = config.getString("mabFile");
         }
 
     }
@@ -77,6 +72,7 @@ public class MakeVolumeMap {
 
     /**
      * Parse the spcecified text
+     * 
      * @param strText
      * @throws IOException
      */
@@ -88,6 +84,7 @@ public class MakeVolumeMap {
 
     /**
      * first, make sure all 0001s are parents
+     * 
      * @param strFile
      * @throws IOException
      */
@@ -182,6 +179,7 @@ public class MakeVolumeMap {
 
     /**
      * Now all 0001s are parents; add any 0004s not children
+     * 
      * @param strFile
      * @throws IOException
      */
@@ -194,13 +192,13 @@ public class MakeVolumeMap {
 
     /**
      * Now all 0001s are parents; add any 0004s not children
+     * 
      * @param text
      * @throws IOException
      */
     private void makeTree2FromText(String text) throws IOException {
 
         String strIdCurrent = "";
-        String str1 = "";
         String str4 = "";
 
         BufferedReader reader = new BufferedReader(new StringReader(text));
@@ -225,7 +223,7 @@ public class MakeVolumeMap {
 
                 if (tag.equals("0001")) {
                     int iValue = str.indexOf(":");
-                    str1 = str.substring(iValue + 1, str.length()).trim();
+                    str.substring(iValue + 1, str.length()).trim();
                 }
 
                 if (tag.equals("0004")) {
@@ -250,7 +248,6 @@ public class MakeVolumeMap {
                     }
 
                     strIdCurrent = "";
-                    str1 = "";
                     str4 = "";
                 }
 
@@ -263,6 +260,7 @@ public class MakeVolumeMap {
 
     /**
      * The Parent-Children map
+     * 
      * @return
      */
     public String getMapGson() {
@@ -272,6 +270,7 @@ public class MakeVolumeMap {
 
     /**
      * The Child-Parent map
+     * 
      * @return
      */
     public String getRevMapGson() {
