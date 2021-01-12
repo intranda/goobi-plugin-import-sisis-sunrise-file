@@ -7,7 +7,7 @@
         <!-- define if import shall use GoobiScript to run in the background -->
         <runAsGoobiScript>true</runAsGoobiScript>
 
-        <!-- Ruleset for the MM files: -->
+        <!-- Ruleset for the MM files -->
         <rulesetPath>/opt/digiverso/goobi/rulesets/ruleset.xml</rulesetPath>
 
         <!-- Path to images: -->
@@ -16,7 +16,7 @@
         <!-- Folder where the files are to be copied -->
         <outputPath>/opt/digiverso/import/temp_import/</outputPath>
 
-        <!-- Ruleset for the MM files: -->
+        <!-- Ruleset for the MM files -->
         <tags>/opt/digiverso/import/tags.txt</tags>
 
         <!-- Use SGML files? -->

@@ -34,7 +34,7 @@ The file is used to configure the plug-in and must be structured as follows:
         <!-- define if import shall use GoobiScript to run in the background -->
         <runAsGoobiScript>true</runAsGoobiScript>
 
-        <!-- Ruleset for the MM files: -->
+        <!-- Ruleset for the MM files -->
         <rulesetPath>src/test/resources/ruleset.xml</rulesetPath>
 
         <!-- Path to images: -->
@@ -43,7 +43,7 @@ The file is used to configure the plug-in and must be structured as follows:
         <!-- Folder where the files are to be copied -->
         <outputPath>/opt/digiverso/import/test_import/</outputPath>
 
-        <!-- Ruleset for the MM files: -->
+        <!-- Ruleset for the MM files -->
         <tags>/opt/digiverso/import/tags.txt</tags>
 
         <!-- Use SGML files? -->
@@ -59,11 +59,11 @@ The file is used to configure the plug-in and must be structured as follows:
         <!-- Collection name -->
         <collection>Disserationen test</collection>
 
-       <!-- Mapping for MultiVolumeWork to child Volumes: -->
+       <!-- Mapping for MultiVolumeWork to child Volumes -->
        <mapMVW>/opt/digiverso/import/test_import/map.txt</mapMVW>
     
-       <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
-       <mapChildren>//opt/digiverso/import/test_import/reverseMap.txt</mapChildren>
+       <!-- Mapping for child Volumes to parent MultiVolumeWork -->
+       <mapChildren>/opt/digiverso/import/test_import/reverseMap.txt</mapChildren>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpirg_sisis_</idPrefix>
