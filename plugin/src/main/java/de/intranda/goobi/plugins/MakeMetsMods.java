@@ -337,8 +337,7 @@ public class MakeMetsMods {
 
                     }
                 } catch (Exception e) {
-                    log.error(e);
-                    log.error("Problem with " + strCurrentId + " at line " + iLine );
+                    log.error("Problem with " + strCurrentId + " at line " + iLine, e);
                 }
 
                 iLine++;
@@ -610,8 +609,7 @@ public class MakeMetsMods {
                     }
 
                 } catch (Exception e) {
-                    log.error(e);
-                    log.error("Problem with " + strCurrentId + " at line " + iLine );    
+                    log.error("Problem with " + strCurrentId + " at line " + iLine, e );    
                 }
 
                 iLine++;

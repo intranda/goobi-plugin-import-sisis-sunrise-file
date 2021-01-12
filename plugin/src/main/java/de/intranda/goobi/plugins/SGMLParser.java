@@ -242,7 +242,7 @@ public class SGMLParser {
                 }
 
             } catch (TypeNotAllowedAsChildException e) {
-                log.error(e.getMessage());
+                log.error(e);
             }
         }
         

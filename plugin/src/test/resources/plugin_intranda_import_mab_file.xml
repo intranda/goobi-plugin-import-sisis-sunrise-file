@@ -1,12 +1,11 @@
+
+<!-- Config for use with the automatic tests -->
+
 <config_plugin>
 	<config>
 
 		<!-- which workflow template shall be used -->
 		<template>*</template>
-
-		<!-- which digital collection to use 
-		<collection>General</collection> 
-		-->
 
 		<!-- define if import shall use GoobiScript to run in the background -->
 		<runAsGoobiScript>true</runAsGoobiScript>
@@ -15,7 +14,7 @@
         <rulesetPath>src/test/resources/ruleset-mpi.xml</rulesetPath>
 
         <!-- Path to images: -->
-        <imagePathFile>/home/joel/git/rechtsgeschichte/privrecht/test/priv-images</imagePathFile>
+        <imagePathFile>/opt/digiverso/import/images</imagePathFile>
 
         <!-- Folder where the files are to be copied -->
         <outputPath>/home/joel/git/rechtsgeschichte/test_import/</outputPath>
@@ -33,13 +32,13 @@
         <!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
         <defaultPublicationType>Monograph</defaultPublicationType>
 
-        <!-- Collection name -->
+        <!-- Digital Collection name -->
         <collection>Disserationen test</collection>
 
-       <!-- Mapping for MultiVolumeWork to child Volumes: -->
+       <!-- Mapping for MultiVolumeWork to child Volumes -->
        <mapMVW>/opt/digiverso/import/dissertationen/data/map.txt</mapMVW>
     
-       <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
+       <!-- Mapping for child Volumes to parent MultiVolumeWork -->
        <mapChildren>/opt/digiverso/import/dissertationen/data/reverseMap.txt</mapChildren>
 
        <!-- For testing: stop the import after this many folders have been created. If 0, then import all.-->

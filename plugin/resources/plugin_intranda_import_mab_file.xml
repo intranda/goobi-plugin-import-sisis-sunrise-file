@@ -8,7 +8,7 @@
         <runAsGoobiScript>true</runAsGoobiScript>
 
         <!-- Ruleset for the MM files: -->
-        <rulesetPath>opt/digiverso/goobi/rulesets/ruleset.xml</rulesetPath>
+        <rulesetPath>/opt/digiverso/goobi/rulesets/ruleset.xml</rulesetPath>
 
         <!-- Path to images: -->
         <imagePathFile>/opt/digiverso/import/images</imagePathFile>
@@ -31,11 +31,11 @@
         <!-- Collection name -->
         <singleDigCollection>Disserationen test</singleDigCollection>
 
-        <!-- Mapping for MultiVolumeWork to child Volumes: -->
+        <!-- Mapping for MultiVolumeWork to child Volumes -->
         <mapMVW>/opt/digiverso/import/temp_import/map.txt</mapMVW>
     
-        <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
-        <mapChildren>//opt/digiverso/import/temp_import/reverseMap.txt</mapChildren>
+        <!-- Mapping for child Volumes to parent MultiVolumeWork -->
+        <mapChildren>/opt/digiverso/import/temp_import/reverseMap.txt</mapChildren>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpirg_sisis_</idPrefix>
