@@ -2,61 +2,35 @@ package de.intranda.goobi.plugins;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.SubnodeConfiguration;
-import org.apache.commons.io.FilenameUtils;
-import org.jdom2.JDOMException;
-import org.xml.sax.SAXException;
-
 import com.google.gson.Gson;
 
-import ugh.exceptions.UGHException;
-
+/**
+ * Class for making parent-child maps from data in a MAB file.
+ * 
+ */
 public class MakeVolumeMap {
 
-    //    private ArrayList<String> lstFilesMulti;
     public ArrayList<String> lstFilesVol;
     private ArrayList<String> lstTops;
     private ArrayList<String> lstChildren;
 
-    //    private String strMap = "/home/joel/git/rechtsgeschichte/map.xml";
-    private String strIds = "/home/joel/git/rechtsgeschichte/ids.txt";
-    public String mapFile = "/home/joel/git/rechtsgeschichte/map.txt";
-    public String reverseMapFile = "/home/joel/git/rechtsgeschichte/reverseMap.txt";
+    private String strIds = "";
+    public String mapFile = "";
+    public String reverseMapFile = "t";
     private HashMap<String, ArrayList<String>> map;
     private HashMap<String, String> reverseMap;
 
-    public static void main(String[] args) throws ConfigurationException, ParserConfigurationException, SAXException, IOException, UGHException,
-            JDOMException, TransformerException {
-
-        MakeVolumeMap maker = new MakeVolumeMap(null);
-        //        maker.lstFilesMulti = new ArrayList<String>();
-        //        maker.lstFilesMulti.add("/home/joel/git/rechtsgeschichte/final_data/mw_nicht_uw");
-        //        maker.lstFilesMulti.add("/home/joel/git/rechtsgeschichte/final_data/stueck_nicht_uw");
-        //        maker.lstFilesMulti.add("/home/joel/git/rechtsgeschichte/final_data/bd_nicht_uw");
-
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/uw_stueck");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/uw_mw");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/uw_bd");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/mw_nicht_uw");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/stueck_nicht_uw");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/bd_nicht_uw");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/uw_rest");
-        maker.lstFilesVol.add("/home/joel/git/rechtsgeschichte/final_data/mono");
-
-        maker.parse();
-
-    }
-
+    /**
+     * ctor
+     * 
+     * @param config
+     */
     public MakeVolumeMap(SubnodeConfiguration config) {
 
         lstTops = new ArrayList<String>();
@@ -75,21 +49,9 @@ public class MakeVolumeMap {
 
     }
 
-    public void parse() throws IOException, JDOMException, ParserConfigurationException, TransformerException {
-
-        //        makeTextFile();
-
-        makeTree1(strIds);
-
-        makeTree2(strIds);
-
-        makeReverseMap();
-
-        saveGson();
-
-        System.out.println("Done creating JSON File");
-    }
-
+    /**
+     * Make the child-parent HasMap
+     */
     void makeReverseMap() {
 
         for (String parent : map.keySet()) {
@@ -101,31 +63,52 @@ public class MakeVolumeMap {
         }
     }
 
+    /**
+     * Parse the specified file
+     * 
+     * @param strFile
+     * @throws IOException
+     */
     public void addFileToMap(String strFile) throws IOException {
 
         makeTree1(strFile);
         makeTree2(strFile);
     }
-    
+
+    /**
+     * Parse the spcecified text
+     * @param strText
+     * @throws IOException
+     */
     public void addTextToMap(String strText) throws IOException {
 
         makeTree1FromText(strText);
         makeTree2FromText(strText);
     }
 
-    //fisrt, make sure all 0001s are parents
+    /**
+     * first, make sure all 0001s are parents
+     * @param strFile
+     * @throws IOException
+     */
     private void makeTree1(String strFile) throws IOException {
 
         String text = ParsingUtils.readFileToString(new File(strFile));
         makeTree1FromText(text);
     }
 
+    /**
+     * first, make sure all 0001s are parents
+     * 
+     * @param text
+     * @throws IOException
+     */
     private void makeTree1FromText(String text) throws IOException {
 
         String strIdCurrent = "";
         String str1 = "";
         String str4 = "";
-      
+
         BufferedReader reader = new BufferedReader(new StringReader(text));
         String str = "";
 
@@ -197,20 +180,29 @@ public class MakeVolumeMap {
         }
     }
 
-    //Now all 0001s are parents; add any 0004s not children
+    /**
+     * Now all 0001s are parents; add any 0004s not children
+     * @param strFile
+     * @throws IOException
+     */
     private void makeTree2(String strFile) throws IOException {
 
         String text = ParsingUtils.readFileToString(new File(strFile));
-        
+
         makeTree2FromText(text);
     }
 
+    /**
+     * Now all 0001s are parents; add any 0004s not children
+     * @param text
+     * @throws IOException
+     */
     private void makeTree2FromText(String text) throws IOException {
-        
+
         String strIdCurrent = "";
         String str1 = "";
         String str4 = "";
-        
+
         BufferedReader reader = new BufferedReader(new StringReader(text));
         String str = "";
 
@@ -269,104 +261,22 @@ public class MakeVolumeMap {
         }
     }
 
-    private void makeTextFile() throws IOException {
-
-        String strIdCurrent = "";
-
-        try (PrintWriter out = new PrintWriter(strIds)) {
-
-            for (String strFile : lstFilesVol) {
-
-                out.println();
-                out.println("##########################################################");
-                out.println(FilenameUtils.getName(strFile));
-                out.println();
-
-                System.out.println("Parsing " + strFile);
-                String text = ParsingUtils.readFileToString(new File(strFile));
-
-                if ((text != null) && (text.length() != 0)) {
-
-                    BufferedReader reader = new BufferedReader(new StringReader(text));
-                    String str = "";
-
-                    while ((str = reader.readLine()) != null) {
-
-                        str = str.trim();
-
-                        if (str.length() < 4) {
-                            continue;
-                        }
-
-                        String tag = str.substring(0, 4);
-
-                        try {
-                            //get current id
-                            if (tag.equals("0000")) {
-                                int iValue = str.indexOf(":");
-                                strIdCurrent = str.substring(iValue + 1, str.length()).trim();
-
-                                out.println(tag + ":" + strIdCurrent);
-                            }
-
-                            if (tag.equals("0001")) {
-                                int iValue = str.indexOf(":");
-                                String idVerweisSSW = str.substring(iValue + 1, str.length()).trim();
-                                if (idVerweisSSW.startsWith("000")) {
-                                    idVerweisSSW = idVerweisSSW.replaceFirst("000", "");
-                                }
-
-                                out.println(tag + ":" + idVerweisSSW);
-                                lstTops.add(idVerweisSSW);
-                            }
-
-                            if (tag.equals("0004")) {
-                                int iValue = str.indexOf(":");
-                                String idVerweisSSW = str.substring(iValue + 1, str.length()).trim();
-
-                                out.println(tag + ":" + idVerweisSSW);
-                            }
-
-                            if (tag.equals("9999")) {
-                                out.println("9999");
-                                out.println();
-                            }
-
-                        } catch (Exception e) {
-                            // TODO: handle exception
-                            System.out.println(e.getMessage());
-                        }
-                    }
-
-                }
-            }
-
-        }
-    }
-
+    /**
+     * The Parent-Children map
+     * @return
+     */
     public String getMapGson() {
         Gson gson = new Gson();
         return gson.toJson(map);
     }
 
+    /**
+     * The Child-Parent map
+     * @return
+     */
     public String getRevMapGson() {
         Gson gson = new Gson();
         return gson.toJson(reverseMap);
-    }
-
-    private void saveGson() throws FileNotFoundException {
-        Gson gson = new Gson();
-        String str = gson.toJson(map);
-
-        try (PrintWriter out = new PrintWriter(mapFile)) {
-            out.println(str);
-        }
-
-        String str2 = gson.toJson(reverseMap);
-
-        try (PrintWriter out = new PrintWriter(reverseMapFile)) {
-            out.println(str2);
-        }
     }
 
 }

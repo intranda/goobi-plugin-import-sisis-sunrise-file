@@ -57,7 +57,7 @@ The file is used to configure the plug-in and must be structured as follows:
         <defaultPublicationType>Monograph</defaultPublicationType>
 
         <!-- Collection name -->
-        <singleDigCollection>Disserationen test</singleDigCollection>
+        <collection>Disserationen test</collection>
 
        <!-- Mapping for MultiVolumeWork to child Volumes: -->
        <mapMVW>/opt/digiverso/import/test_import/map.txt</mapMVW>
@@ -71,6 +71,9 @@ The file is used to configure the plug-in and must be structured as follows:
         <!-- Remove the image files from their original folders -->   
         <moveFiles>false</moveFiles>
         
+       <!-- List of IDs to import. If empty, import all files -->
+       <listIDs></listIDs>
+       
     </config>
 </config_plugin>
 ```
@@ -94,35 +97,28 @@ If `"withSGML"` is `true`, then the `"sgmlPath"` folder is searched for SGMl fil
 The element `"defaultPublicationType"`
 specifies the MM Type of the document if it has no children or parents. A document with children is imported as MultiVolumeWork, the children are imported as Volumes.
 
-The element `"singleDigCollection"`
-element specifies the metadata singleDigCollection for the MM files.
+The element `"collection"`
+specifies the metadata singleDigCollection for the MM files.
 
 The element `"mapMVW"`
-element specifies the path to a JSON file where the MultiVolumeWork IDs are stored, together with a list of the IDs of each volume that belongs to it.
+specifies the path to a JSON file where the MultiVolumeWork IDs are stored, together with a list of the IDs of each volume that belongs to it.
 
 The element `"mapChildren"`
-element specifies the path to a JSON file that stores the same mapping in reverse. So for each volume ID belonging to a WMD, the ID of the parent is mapped.  
+specifies the path to a JSON file that stores the same mapping in reverse. So for each volume ID belonging to a WMD, the ID of the parent is mapped.  
+
+The element `"listIDs"`
+specifies the path to a text file containing a list fo Ids. If this is specified, then only datasets with these ids will be imported from the MAB file. 
 
 ## Mode of operation
 
-The working method is as follows: To use the import, the mass import area must be opened in the process templates and the `intranda_import_plugin must be selected in the File upload import tab. An Excel file can then be uploaded and imported.
+The working method is as follows: To use the import, the mass import area must be opened in the process templates and the `intranda_import_mab_file` must be selected in the File upload import tab. A MAB file can then be uploaded and imported.
 
 
 ### Import
 
-* The mappings mapMVW and mapChildren are created.
-* The programme is opened as a JAR, with the path to the config file as the only parameter.
-* The paths to the mab2 file etc. are read from the config file, and the mab2 file is read through.
-* For each dataset in the file, a MetsMods document is created, with posending metadata. The translation of each field happens using the tags file.
-* If `"withSGML"` is `true`, then the folder `"sgmlPath"` is searched for SGMl-files, with CatalogID as name. The MM Document then comes from the structure.
-* For each page in the document, images are searched for in the `"imagePathFile"` folder, in subfolders with CatalogID as name. These are then copied to the image folder, and references made in the structmap.
-* NOTE: Currently the images are NOT copied with the correct permissions. This means that before importing into Goobi, all created folders and files must be given the owner tomcat8, using `sudo chown -R tomcat8 *` !
-* After that, the Goobi Folder Import can be used to import the processes. 
+* The mappings mapMVW and mapChildren are created, and saved as json files in `outputPath`
+* For each dataset in the file, a MetsMods document is created, with anchor file if necessary. The translation of each field happens using the tags file.
+* For each page in the document, images are searched for in the `"imagePathFile"` folder, in the folder istelf and in subfolders with CatalogID as name. These are then copied to the image folder, and references made in the structmap.
+* For each new MetsMods a folder with the CatalogID as name is created in `outputPath`, containing the MM files and images subfolders. 
+* Each of these folder is then imported into Goobi Workflow as a Process, named with CatalogId and a prefix as specified in the config file.
 
-###Note
-
-In the current case, the MAB file is too large for the memory on the customer's computer. In this case I have split the file into 2, where in the second part there are only plants that do not appear in the mapping files, so that the creation of WMD and volumes works. Then the programme can be called 2 times, once for each MAB file. WMDs and volumes are only mapped correctly if both records are in the same MAB file!
-
-
-
-Translated with www.DeepL.com/Translator (free version)

@@ -34,6 +34,8 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import freemarker.core.Environment;
+import lombok.extern.log4j.Log4j2;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
@@ -46,6 +48,13 @@ import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
 import ugh.fileformats.mets.MetsMods;
 
+@Log4j2
+/**
+ * Create MetMods files from MAB files, and save them
+ * 
+ * @author joel
+ *
+ */
 public class MakeMetsMods {
 
     Boolean boVerbose = false;
@@ -73,7 +82,6 @@ public class MakeMetsMods {
     private Prefs prefs;
     private HashMap<String, String> mapTags;
     private SubnodeConfiguration config;
-    //    private ArrayList<MetsMods> lstMM;
 
     private int iStopImportAfter = 0;
 
@@ -88,9 +96,6 @@ public class MakeMetsMods {
     //and page numbers:
     int iCurrentPageNo = 1;
 
-    //and missing files:
-    ArrayList<String> lstMissingFiles;
-
     //and all top level metadata:
     ArrayList<String> lstTopLevelMetadata;
     private DocStruct currentVolume;
@@ -98,37 +103,32 @@ public class MakeMetsMods {
     //special case: save everything as Monograph:
     private Boolean boAllMono = false;
 
-    //    public static void main(String[] args)
-    //            throws ConfigurationException, ParserConfigurationException, SAXException, IOException, UGHException, JDOMException {
-    //
-    //        //        String strConfig = "/home/joel/git/rechtsgeschichte/testdiss/diss-config.xml";
-    //        //        String strConfig = "/home/joel/git/rechtsgeschichte/testprivr/privrecht-config.xml";
-    //        //        String strConfig = "/home/joel/git/rechtsgeschichte/data/config.xml";
-    //        String strConfig = "/home/joel/git/rechtsgeschichte/testdiss4/diss-config4.xml";
-    //
-    //        if (args.length > 0) {
-    //            strConfig = args[0];
-    //        }
-    //
-    //        XMLConfiguration xmlConfig = new XMLConfiguration(strConfig); //ConfigPlugins.getPluginConfig("whatever");
-    //        xmlConfig.setExpressionEngine(new XPathExpressionEngine());
-    //        xmlConfig.setReloadingStrategy(new FileChangedReloadingStrategy());
-    //
-    //        SubnodeConfiguration myconfig = null;
-    //        myconfig = xmlConfig.configurationAt("/config[./project = 'Project']");
-    //
-    //        MakeMetsModsDiss maker = new MakeMetsModsDiss(myconfig);
-    //
-    //        maker.parse();
-    //
-    //    }
-
+    /**
+     * ctor
+     * 
+     * @param config
+     * @throws PreferencesException
+     * @throws ConfigurationException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     */
     public MakeMetsMods(SubnodeConfiguration config)
             throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
         setup(config);
 
     }
 
+    /**
+     * Setup: creates the MetadataMaker, reads the tags list and loads config
+     * 
+     * @param config
+     * @throws PreferencesException
+     * @throws ConfigurationException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     */
     private void setup(SubnodeConfiguration config)
             throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
 
@@ -138,7 +138,6 @@ public class MakeMetsMods {
         this.prefs = new Prefs();
         prefs.loadPrefs(config.getString(strRulesetPath));
         lstIds = new ArrayList<String>();
-        lstMissingFiles = new ArrayList<String>();
         lstTopLevelMetadata = new ArrayList<String>();
 
         iStopImportAfter = config.getInt("importFirst", 0);
@@ -151,7 +150,6 @@ public class MakeMetsMods {
 
         if (boWithSGML) {
             sgmlParser = new SGMLParser(config);
-            sgmlParser.boVerbose = boVerbose;
         }
 
         metaMaker = new MetadataMaker(prefs);
@@ -159,6 +157,13 @@ public class MakeMetsMods {
         readTagsList();
     }
 
+    /**
+     * Read the json parent-child map files
+     * 
+     * @throws JsonIOException
+     * @throws JsonSyntaxException
+     * @throws FileNotFoundException
+     */
     private void readJson() throws JsonIOException, JsonSyntaxException, FileNotFoundException {
 
         Gson gson = new Gson();
@@ -172,37 +177,25 @@ public class MakeMetsMods {
 
     }
 
+    /**
+     * Read the file, and save the MetsMods files.
+     * 
+     * @param mabFile
+     * @throws IOException
+     * @throws UGHException
+     * @throws JDOMException
+     */
     public void parseNewMabFile(String mabFile) throws IOException, UGHException, JDOMException {
-
-        //        if (boVerbose) {
-        System.out.println("1");
-        //        }
 
         if (map == null) {
             readJson();
         }
 
-        //        if (boVerbose) {
-        System.out.println("2");
-        //        }
-
         readTagsList();
-
-        //        if (boVerbose) {
-        System.out.println("3");
-        //        }
 
         readIdsList();
 
-        //        if (boVerbose) {
-        System.out.println("4");
-        //        }
-
         collectMultiVolumeWorks(mabFile);
-
-        //        if (boVerbose) {
-        System.out.println("5");
-        //        }
 
         //now remove all map entries which do not exist as MVWs:
         removeEmptyParents();
@@ -210,46 +203,9 @@ public class MakeMetsMods {
         saveMMs(mabFile);
     }
 
-    //Parse the MAB file specified in the config
-    public void parse() throws IOException, UGHException, JDOMException {
-
-        //        if (boVerbose) {
-        System.out.println("1");
-        //        }
-
-        readJson();
-
-        //        if (boVerbose) {
-        System.out.println("2");
-        //        }
-
-        readTagsList();
-
-        //        if (boVerbose) {
-        System.out.println("3");
-        //        }
-
-        readIdsList();
-
-        //        if (boVerbose) {
-        System.out.println("4");
-        //        }
-
-        String mabFile = config.getString("mabFile");
-
-        collectMultiVolumeWorks(mabFile);
-
-        //        if (boVerbose) {
-        System.out.println("5");
-        //        }
-
-        //now remove all map entries which do not exist as MVWs:
-        removeEmptyParents();
-
-        saveMMs(mabFile);
-    }
-
-    //Remove parents from list if they have not been created.
+    /**
+     * Remove parents from list if they have not been created.
+     */
     private void removeEmptyParents() {
 
         ArrayList<String> lstEmptyParents = new ArrayList<String>();
@@ -265,12 +221,28 @@ public class MakeMetsMods {
         }
     }
 
+    /**
+     * Go through all the datasets in the file, and create mappings for which are parents to which.
+     * 
+     * @param mabFile
+     * @throws IOException
+     * @throws UGHException
+     * @throws JDOMException
+     */
     public void collectMultiVolumeWorks(String mabFile) throws IOException, UGHException, JDOMException {
 
         String text = ParsingUtils.readFileToString(new File(mabFile));
         collectMultiVolumeWorksFromText(text);
     }
 
+    /**
+     * Go through all the datasets in the file, and create mappings for which are parents to which.
+     * 
+     * @param text
+     * @throws IOException
+     * @throws UGHException
+     * @throws JDOMException
+     */
     public void collectMultiVolumeWorksFromText(String text) throws IOException, UGHException, JDOMException {
         if ((text != null) && (text.length() != 0)) {
 
@@ -278,7 +250,7 @@ public class MakeMetsMods {
             DocStruct logical = mm.getDigitalDocument().getLogicalDocStruct();
 
             //collection:
-            Metadata mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("singleDigCollection"));
+            Metadata mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("collection"));
             logical.addMetadata(mdCollection);
 
             BufferedReader reader = new BufferedReader(new StringReader(text));
@@ -305,7 +277,7 @@ public class MakeMetsMods {
                     mm = makeMM("MultiVolumeWork");
                     logical = mm.getDigitalDocument().getLogicalDocStruct();
                     //collection:
-                    mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("singleDigCollection"));
+                    mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("collection"));
                     logical.addMetadata(mdCollection);
                 }
 
@@ -326,10 +298,6 @@ public class MakeMetsMods {
                         //Check for parent:
                         if (map != null && tag.contentEquals("0000")) {
                             boMVW = map.containsKey(content);
-
-                            //                            if (boVerbose) {
-                            //                                System.out.println("Id: " + content);
-                            //                            }
                         }
 
                         //only carry on for parents
@@ -337,17 +305,8 @@ public class MakeMetsMods {
                             continue;
                         }
 
-                        //no images for MVWs
-                        //                        if (!boWithSGML && tag.equals("1040")) {
-                        //                            addImageFiles(content, mm);
-                        //                            continue;
-                        //                        }
+                        //note: no images for MVWs
 
-                        //                        //For MVW, use SeriesOrder instead of CurrentNoSorting
-                        //                        if (boMVW && tag.equals("0024")) {
-                        //                            tag = "0089";
-                        //                        }
-                        //                        
                         Metadata md = metaMaker.getMetadata(mapTags.get(tag), content);
 
                         if (md != null) {
@@ -378,9 +337,8 @@ public class MakeMetsMods {
 
                     }
                 } catch (Exception e) {
-                    // TODO: handle exception
-                    System.out.println("Problem with " + strCurrentId + " at line " + iLine);
-                    System.out.println(e.getMessage());
+                    log.error(e);
+                    log.error("Problem with " + strCurrentId + " at line " + iLine );
                 }
 
                 iLine++;
@@ -389,13 +347,29 @@ public class MakeMetsMods {
         }
     }
 
+    /**
+     * Save the MetsMods files
+     * 
+     * @param mabFile
+     * @throws IOException
+     * @throws UGHException
+     * @throws JDOMException
+     */
     public void saveMMs(String mabFile) throws IOException, UGHException, JDOMException {
 
         String text = ParsingUtils.readFileToString(new File(mabFile));
         saveMMsFromText(text);
     }
 
-    //Only returns the last MetsMods.
+    /**
+     * Save the MetsMods files Only returns the last MetsMods, in practice it is called with text from one dataset only.
+     * 
+     * @param text
+     * @return
+     * @throws IOException
+     * @throws UGHException
+     * @throws JDOMException
+     */
     public MetsMods saveMMsFromText(String text) throws IOException, UGHException, JDOMException {
 
         int iImported = 0;
@@ -412,7 +386,7 @@ public class MakeMetsMods {
             DocStruct logical = mm.getDigitalDocument().getLogicalDocStruct();
 
             //collection:
-            Metadata mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("singleDigCollection"));
+            Metadata mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("collection"));
             logical.addMetadata(mdCollection);
 
             BufferedReader reader = new BufferedReader(new StringReader(text));
@@ -441,7 +415,6 @@ public class MakeMetsMods {
 
                     Boolean boSave = true;
                     if (lstIdsToImport != null && !lstIdsToImport.isEmpty() && !lstIdsToImport.contains(strCurrentId)) {
-                        //                        System.out.println("Not saving " + strCurrentId);
                         boSave = false;
                     }
 
@@ -451,9 +424,7 @@ public class MakeMetsMods {
                             sgmlParser.addSGML(mm, currentVolume, strCurrentId);
                         }
 
-                        if (boVerbose) {
-                            System.out.println("Save " + strCurrentId + " line " + iLine);
-                        }
+                        log.debug("Save " + strCurrentId + " line " + iLine);
                         saveMM(mm, strCurrentPath);
                     }
 
@@ -483,10 +454,6 @@ public class MakeMetsMods {
 
                             boMVW = (map != null) && map.containsKey(content);
 
-                            //                            if (boVerbose && boMVW) {
-                            //                                System.out.println("Elt is parent: " + content);
-                            //                            }
-
                             //Only a child if the parent exists
                             boChild = !boAllMono && (mapRev != null) && mapRev.containsKey(content);
                             if (boChild) {
@@ -509,7 +476,6 @@ public class MakeMetsMods {
                             strCurrentPath = strFolder + strCurrentId + "/";
 
                             if (lstIdsToImport != null && !lstIdsToImport.isEmpty() && !lstIdsToImport.contains(strCurrentId)) {
-                                //                                System.out.println("Not saving " + strCurrentId);
                                 boIgnore = true;
                                 continue;
                             } else {
@@ -545,7 +511,7 @@ public class MakeMetsMods {
 
                                     DocStruct volume = mmParent.getDigitalDocument().createDocStruct(prefs.getDocStrctTypeByName("Volume"));
                                     currentVolume = volume;
-                                    mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("singleDigCollection"));
+                                    mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("collection"));
                                     volume.addMetadata(mdCollection);
 
                                     logical.addChild(volume);
@@ -565,7 +531,7 @@ public class MakeMetsMods {
                             if (!boChild) {
                                 logical = mm.getDigitalDocument().getLogicalDocStruct();
                                 //collection:
-                                mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("singleDigCollection"));
+                                mdCollection = metaMaker.getMetadata("singleDigCollection", config.getString("collection"));
                                 logical.addMetadata(mdCollection);
                                 currentVolume = null;
                             }
@@ -643,14 +609,12 @@ public class MakeMetsMods {
 
                     }
 
-                    iLine++;
                 } catch (Exception e) {
-                    // TODO: handle exception
-                    System.out.println("Problem with " + strCurrentId + " at line " + iLine);
-                    System.out.println(e.getMessage());
-
-                    iLine++;
+                    log.error(e);
+                    log.error("Problem with " + strCurrentId + " at line " + iLine );    
                 }
+
+                iLine++;
             }
 
         }
@@ -658,6 +622,13 @@ public class MakeMetsMods {
         return mm;
     }
 
+    /**
+     * Deep copy. Used for creating multiple anchor files.
+     * 
+     * @param mmParent
+     * @return
+     * @throws UGHException
+     */
     private MetsMods clone(MetsMods mmParent) throws UGHException {
 
         DocStruct logi = mmParent.getDigitalDocument().getLogicalDocStruct().copy(true, true);
@@ -766,25 +737,13 @@ public class MakeMetsMods {
         String strMasterPrefix = "master_";
         String strMediaSuffix = "_media";
         String strMasterPath = strImageFolder + strMasterPrefix + strIdPrefix + strCurrentId + strMediaSuffix + File.separator;
-        //        String strNormalPath = strImageFolder + strCurrentId + strMediaSuffix + File.separator;
 
         new File(strMasterPath).mkdirs();
-        //        new File(strNormalPath).mkdirs();
 
         Path pathSource = Paths.get(file.getAbsolutePath());
-        //        Path pathDest = Paths.get(strNormalPath + strDatei.toLowerCase());
         Path pathDest = Paths.get(strMasterPath + strDatei.toLowerCase());
 
-        //        //first aufruf: make the master file
-        //        if (page == null) {
-        //            pathDest = Paths.get(strMasterPath + pathSource.getFileName());
-        //        }
-
         Files.copy(pathSource, pathDest, StandardCopyOption.REPLACE_EXISTING);
-
-        //                Path pathDest2 = Paths.get(strNormalPath + pathSource.getFileName());
-        //                Files.copy(pathSource, pathDest2, StandardCopyOption.REPLACE_EXISTING);
-
         File fileCopy = new File(pathDest.toString());
 
         //first time for this image?
@@ -831,7 +790,6 @@ public class MakeMetsMods {
             return dsPage;
         } else {
 
-            //TODO: why is the whole path written out here, but not above??
             ContentFile cf = new ContentFile();
             if (SystemUtils.IS_OS_WINDOWS) {
                 cf.setLocation("file:" + fileCopy.getCanonicalPath());
@@ -845,6 +803,12 @@ public class MakeMetsMods {
 
     }
 
+    /**Find the image file, looking in the image folder and subfolders named after the Id of the current data
+     * 
+     * @param strImage
+     * @param strCurrentId
+     * @return
+     */
     private File getImageFile(String strImage, String strCurrentId) {
 
         String strFolder = strImage.substring(0, 4).toUpperCase();
@@ -908,6 +872,11 @@ public class MakeMetsMods {
         }
     }
 
+    /**
+     * If there is a list of Ids which are to be imported, read it.
+     * 
+     * @throws IOException
+     */
     private void readIdsList() throws IOException {
 
         String strFileList = config.getString("listIDs");
@@ -961,7 +930,7 @@ public class MakeMetsMods {
     }
 
     /**
-     * Make a Mets/Mods object, and add it to the physical DocStruct as a BoundBook.
+     * Make a Mets/Mods object, and add it to the physical DocStruct.
      * 
      * @param strType
      * @return
@@ -1001,12 +970,14 @@ public class MakeMetsMods {
         return newMM;
     }
 
+    /**
+     * Save the MetsMods file
+     * 
+     * @param mmNew
+     * @param strFolderForMM
+     * @throws UGHException
+     */
     private void saveMM(MetsMods mmNew, String strFolderForMM) throws UGHException {
-
-        //        lstMM.add(mmNew);
-        if (boVerbose) {
-            System.out.println("Saving MM " + strFolderForMM);
-        }
 
         String strFolder = strFolderForMM;
 

@@ -34,7 +34,7 @@
         <defaultPublicationType>Monograph</defaultPublicationType>
 
         <!-- Collection name -->
-        <singleDigCollection>Disserationen test</singleDigCollection>
+        <collection>Disserationen test</collection>
 
        <!-- Mapping for MultiVolumeWork to child Volumes: -->
        <mapMVW>/opt/digiverso/import/dissertationen/data/map.txt</mapMVW>

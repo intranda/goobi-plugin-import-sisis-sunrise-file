@@ -6,16 +6,31 @@ import ugh.dl.Person;
 import ugh.dl.Prefs;
 import ugh.exceptions.MetadataTypeNotAllowedException;
 
+/**
+ * Class for making Metadata out of strings
+ * 
+ */
 public class MetadataMaker {
 
     private Prefs prefs;
 
+    /**
+     * ctor
+     * @param prefs
+     */
     public MetadataMaker(Prefs prefs) {
 
         this.prefs = prefs;
 
     }
 
+    /**
+     * Get a Metadata object of the specified type and content
+     * @param strElt
+     * @param content
+     * @return
+     * @throws MetadataTypeNotAllowedException
+     */
     public Metadata getMetadata(String strElt, String content) throws MetadataTypeNotAllowedException {
 
         if (strElt == null) {
@@ -39,6 +54,11 @@ public class MetadataMaker {
 
     }
 
+    /**
+     * Give a Person metadata Firstname and Lastname
+     * @param md
+     * @param content
+     */
     private void setPersonData(Metadata md, String content) {
 
         Person person = (Person) md;

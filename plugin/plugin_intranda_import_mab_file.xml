@@ -8,13 +8,13 @@
         <runAsGoobiScript>true</runAsGoobiScript>
 
         <!-- Ruleset for the MM files: -->
-        <rulesetPath>src/test/resources/ruleset.xml</rulesetPath>
+        <rulesetPath>opt/digiverso/goobi/rulesets/ruleset.xml</rulesetPath>
 
         <!-- Path to images: -->
         <imagePathFile>/opt/digiverso/import/images</imagePathFile>
 
         <!-- Folder where the files are to be copied -->
-        <outputPath>/opt/digiverso/import/test_import/</outputPath>
+        <outputPath>/opt/digiverso/import/temp_import/</outputPath>
 
         <!-- Ruleset for the MM files: -->
         <tags>/opt/digiverso/import/tags.txt</tags>
@@ -25,24 +25,27 @@
         <!-- Path to SGML files, if withSGML: -->
         <sgmlPath></sgmlPath>
 
-
         <!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
         <defaultPublicationType>Monograph</defaultPublicationType>
 
         <!-- Collection name -->
         <singleDigCollection>Disserationen test</singleDigCollection>
 
-       <!-- Mapping for MultiVolumeWork to child Volumes: -->
-       <mapMVW>/opt/digiverso/import/test_import/map.txt</mapMVW>
+        <!-- Mapping for MultiVolumeWork to child Volumes: -->
+        <mapMVW>/opt/digiverso/import/temp_import/map.txt</mapMVW>
     
-       <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
-       <mapChildren>//opt/digiverso/import/test_import/reverseMap.txt</mapChildren>
+        <!-- Mapping for child Volumes to parent MultiVolumeWork: -->
+        <mapChildren>//opt/digiverso/import/temp_import/reverseMap.txt</mapChildren>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpirg_sisis_</idPrefix>
         
         <!-- Remove the image files from their original folders -->   
         <moveFiles>false</moveFiles>
+        
+        <!-- List of IDs to import. If empty, import all files -->
+       <listIDs></listIDs>
+        
         
     </config>
 </config_plugin>

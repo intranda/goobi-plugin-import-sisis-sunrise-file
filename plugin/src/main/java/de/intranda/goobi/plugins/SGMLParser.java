@@ -18,6 +18,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import lombok.extern.log4j.Log4j2;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
@@ -32,6 +34,13 @@ import ugh.exceptions.TypeNotAllowedForParentException;
 import ugh.exceptions.UGHException;
 import ugh.fileformats.mets.MetsMods;
 
+/**
+ * Get structure data from a SGML file, and add it to a MetsMods file.
+ * 
+ * @author joel
+ *
+ */
+@Log4j2
 public class SGMLParser {
 
     private String strOutputPath;
@@ -54,10 +63,12 @@ public class SGMLParser {
 
     private String strIdPrefix = "";
 
-    public Boolean boVerbose;
-    //special case: save everything as Monograph:
-    private Boolean boAllMono = false;
-
+    /**
+     * ctor
+     * @param config
+     * @throws ConfigurationException
+     * @throws PreferencesException
+     */
     public SGMLParser(SubnodeConfiguration config) throws ConfigurationException, PreferencesException {
 
         this.config = config;
@@ -66,15 +77,19 @@ public class SGMLParser {
         prefs = new Prefs();
         prefs.loadPrefs(config.getString(strConfigRulesetPath));
 
-        boAllMono = config.getBoolean("allMono", false);
         strIdPrefix = config.getString("idPrefix", "");
     }
 
+    /**
+     * Get  the structure data from a SGML file, and add it to the current volume
+     * 
+     * @param mm
+     * @param currentVolume
+     * @param strId
+     * @throws IOException
+     * @throws UGHException
+     */
     public void addSGML(MetsMods mm, DocStruct currentVolume, String strId) throws IOException, UGHException {
-
-        if (boVerbose) {
-            System.out.println("Add SGML " + strId);
-        }
 
         iCurrentPageNo = 1;
         this.mm = mm;
@@ -90,29 +105,35 @@ public class SGMLParser {
 
         if (sgml.exists()) {
             parse(sgml);
-        } else if (boVerbose) {
-            System.out.println("No SGML for " + strId);
+        } else  {
+            log.debug("No SGML for " + strId);
         }
     }
 
+    /**
+     * Parse the sgml file 
+     * 
+     * @param sgml
+     * @throws IOException
+     * @throws UGHException
+     */
     private void parse(File sgml) throws IOException, UGHException {
 
-        //        String text = ParsingUtils.readFileToString(sgml);
-
         Document doc = getDoc(sgml);
-
-        //        //for testing
-        //        final File f = new File("/home/joel/git/rechtsgeschichte/test/html.txt");
-        //        FileUtils.writeStringToFile(f, doc.outerHtml(), "UTF-8");
-        //        //
 
         for (Element elt : doc.getElementsByTag("html")) {
 
             parse(elt);
-            break;
         }
     }
 
+    /**
+     * Parse
+     * 
+     * @param elt
+     * @throws IOException
+     * @throws UGHException
+     */
     public void parse(Element elt) throws IOException, UGHException {
 
         Boolean boWithEbind = false;
@@ -143,8 +164,7 @@ public class SGMLParser {
                         try {
                             addDiv(elt2, logical);
                         } catch (TypeNotAllowedAsChildException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            log.error(e);
                         }
                     }
                 }
@@ -168,8 +188,7 @@ public class SGMLParser {
                             try {
                                 addDiv(elt2, logical);
                             } catch (TypeNotAllowedAsChildException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
+                             log.error(e);
                             }
                         }
                     }
@@ -180,6 +199,15 @@ public class SGMLParser {
 
     }
 
+    /**
+     * There may be pages which are not correctly embedded in the html body. This finds them and adds them as Prepages.
+     * 
+     * @param elts
+     * @throws TypeNotAllowedForParentException
+     * @throws UGHException
+     * @throws IOException
+     * @throws TypeNotAllowedAsChildException
+     */
     private void addPrepages(Elements elts) throws TypeNotAllowedForParentException, UGHException, IOException, TypeNotAllowedAsChildException {
     
         DocStruct dsEintrag = dd.createDocStruct(prefs.getDocStrctTypeByName("Prepage"));
@@ -214,19 +242,25 @@ public class SGMLParser {
                 }
 
             } catch (TypeNotAllowedAsChildException e) {
-                // TODO Auto-generated catch block
-                Log.error(e.getMessage());
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }
         
         if (boPrepages) {
             dsTop.addChild(dsEintrag);
-            System.out.println("Prepages: " + strCurrentId);
         }
 
     }
 
+    /**
+     * Parse 
+     * 
+     * @param elt2
+     * @param dsParent
+     * @return
+     * @throws UGHException
+     * @throws IOException
+     */
     private ArrayList<DocStruct> addDiv(Element elt2, DocStruct dsParent) throws UGHException, IOException {
 
         DocStruct dsEintrag = dd.createDocStruct(prefs.getDocStrctTypeByName(getDocStructName(elt2)));
@@ -287,6 +321,12 @@ public class SGMLParser {
         return pages;
     }
 
+    /**
+     * Add titles and publication data
+     * 
+     * @param eltHeader
+     * @throws MetadataTypeNotAllowedException
+     */
     private void addHeader(Element eltHeader) throws MetadataTypeNotAllowedException {
 
         DocStruct docStruct = logical;
@@ -332,17 +372,6 @@ public class SGMLParser {
                     docStruct.addMetadata(mdTitle);
                 }
 
-                //                for (Element eltTitle : elt.getElementsByTag("author")) {
-                //                    MetadataType typeTitle = prefs.getMetadataTypeByName("Author");
-                //                    Metadata mdTitle = new Metadata(typeTitle);
-                //
-                //                    //                        if (docStruct.getAllMetadataByType(typeTitle).size() == 0) {
-                //                    mdTitle.setValue(eltTitle.text());
-                //
-                //                    docStruct.addMetadata(mdTitle);
-                //                    //                        }
-                //
-                //                }
             }
 
             if (strName.equalsIgnoreCase("publicationstmt")) {
@@ -371,7 +400,13 @@ public class SGMLParser {
         }
     }
 
-    //Check we are not just copying a metadatum
+    /**
+     * Check we are not just copying a metadatum
+     * @param docStruct
+     * @param typeTitle
+     * @param text
+     * @return
+     */
     private boolean copyOfMetadata(DocStruct docStruct, MetadataType typeTitle, String text) {
 
         if (docStruct.getAllMetadataByType(typeTitle).size() == 0) {
@@ -386,6 +421,12 @@ public class SGMLParser {
         return false;
     }
 
+    /**
+     * What sort of element is it?
+     * 
+     * @param elt1
+     * @return
+     */
     private String getDocStructName(Element elt1) {
 
         String strName = elt1.text();
@@ -447,10 +488,8 @@ public class SGMLParser {
         String strMasterPrefix = "master_";
         String strMediaSuffix = "_media";
         String strMasterPath = strImageFolder + strMasterPrefix + this.strIdPrefix + this.strCurrentId + strMediaSuffix + File.separator;
-        //        String strNormalPath = strImageFolder +this.strCurrentId  + strMediaSuffix + File.separator;
 
         new File(strMasterPath).mkdirs();
-        //        new File(strNormalPath).mkdirs();
 
         Path pathSource = Paths.get(strFilePath);
         Path pathDest = Paths.get(strMasterPath + strFile);
@@ -462,9 +501,6 @@ public class SGMLParser {
         }
 
         Files.copy(pathSource, pathDest, StandardCopyOption.REPLACE_EXISTING);
-
-        //        Path pathDest2 = Paths.get(strNormalPath + pathSource.getFileName());
-        //        Files.copy(pathSource, pathDest2, StandardCopyOption.REPLACE_EXISTING);
 
         fileCopy = new File(pathDest.toString());
 
@@ -501,6 +537,12 @@ public class SGMLParser {
 
     }
 
+    /**
+     * Parse the file as an html document, using Jsoup
+     * 
+     * @param sgml
+     * @return
+     */
     private Document getDoc(File sgml) {
 
         String charset = "ISO-8859-1";
@@ -512,8 +554,7 @@ public class SGMLParser {
             document.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+          log.error(e);
         }
 
         return document;

@@ -22,7 +22,6 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
 import org.apache.commons.lang.StringUtils;
-import org.goobi.beans.Process;
 import org.goobi.production.enums.ImportReturnValue;
 import org.goobi.production.enums.ImportType;
 import org.goobi.production.enums.PluginType;
@@ -40,10 +39,7 @@ import com.google.gson.reflect.TypeToken;
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.MassImportForm;
 import de.sub.goobi.helper.StorageProvider;
-import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.ImportPluginException;
-import de.sub.goobi.helper.exceptions.SwapException;
-import de.sub.goobi.persistence.managers.ProcessManager;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
@@ -52,7 +48,6 @@ import ugh.dl.Fileformat;
 import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
-import ugh.exceptions.WriteException;
 
 @PluginImplementation
 @Log4j2
@@ -87,12 +82,13 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
     private String workflowTitle;
 
     private boolean runAsGoobiScript = false;
-//    private String collection;
 
     SubnodeConfiguration myconfig;
     private MakeVolumeMap volMaker;
     private MakeMetsMods mmMaker;
+    private String collection;
 
+    
     /**
      * define what kind of import plugin this is
      * 
@@ -128,7 +124,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
         if (myconfig != null) {
             runAsGoobiScript = myconfig.getBoolean("/runAsGoobiScript", false);
-//            collection = myconfig.getString("/collection", "");
+            collection = myconfig.getString("/collection", "");
         }
     }
 
@@ -154,8 +150,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 String str = "";
                 String strCurrent = "";
                 String strId = "";
-
-                int iLine = 0;
 
                 while ((str = reader.readLine()) != null) {
                     str = str.trim();
@@ -214,7 +208,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
      * This method is used to actually create the Goobi processes this is done based on previously created records
      */
     @Override
-    @SuppressWarnings("unchecked")
     public List<ImportObject> generateFiles(List<Record> records) {
         if (StringUtils.isBlank(workflowTitle)) {
             workflowTitle = form.getTemplate().getTitel();
@@ -251,69 +244,50 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 log.error("Error while creating collecting parents in the MabFileImportPlugin", e);
             }
         }
-        
+
         List<ImportObject> answer = new ArrayList<>();
 
         //then save the mms:
         for (Record rec : records) {
-            
+
             ImportObject io = new ImportObject();
-            
+
             String strText = rec.getData();
             try {
                 Fileformat fileformat = mmMaker.saveMMsFromText(strText);
-                
+
                 io.setProcessTitle(rec.getId());
                 String fileName = getImportFolder() + io.getProcessTitle() + ".xml";
                 io.setMetsFilename(fileName);
                 fileformat.write(fileName);
-                
+
                 // copy all files with new folder names
                 String imagefolder = myconfig.getString("outputPath") + rec.getId();
                 String strPrefix = myconfig.getString("idPrefix", "");
                 imagefolder = imagefolder.replace(strPrefix, "");
-                
+
                 moveSourceData(imagefolder, io.getProcessTitle());
-                
+
                 io.setImportReturnValue(ImportReturnValue.ExportFinished);
-                
-                
-//                // check if the process exists
-//                if (replaceExisting) {
-//                    boolean dataReplaced = false;
-//                    Process existingProcess = ProcessManager.getProcessByExactTitle(io.getProcessTitle());
-//                    if (existingProcess != null) {
-//                        try {
-//                            existingProcess.writeMetadataFile(ff);
-//                            //                            existingProcess.setErstellungsdatum(new Date());
-//                            dataReplaced = true;
-//                        } catch (WriteException | PreferencesException | IOException | InterruptedException | SwapException | DAOException e) {
-//                            log.error(e);
-//                        }
-//
-//                        Path sourceRootFolder = Paths.get(record.getData());
-//                        moveImageIntoProcessFolder(existingProcess, sourceRootFolder);
-//                    }
-//                    if (dataReplaced) {
-//                        // TODO delete mets file, anchor file, image folder
-//                        answer.remove(io);
-//                        continue;
-//                    }
-//                }
-//                
-                
+
             } catch (IOException | UGHException | JDOMException e) {
                 log.error("Error while creating Goobi processes in the MabFileImportPlugin", e);
                 io.setImportReturnValue(ImportReturnValue.WriteError);
             }
-            
+
             answer.add(io);
         }
 
         return answer;
     }
 
-    
+    /**
+     * Move any folder containing images to the correct Goobi Process folder.
+     * 
+     * @param source
+     * @param strProcessTitle
+     * @throws IOException
+     */
     private void moveSourceData(String source, String strProcessTitle) throws IOException {
         Path destinationRootFolder = Paths.get(importFolder, strProcessTitle);
         Path destinationImagesFolder = Paths.get(destinationRootFolder.toString(), "images");
@@ -355,55 +329,44 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                         log.error(e);
                         throw e;
                     }
-                }               
+                }
             }
         }
     }
-    
+
+    /**
+     * Move the folder
+     * 
+     * @param currentData
+     * @param destinationFolder
+     * @throws IOException
+     */
     private void moveFolder(Path currentData, Path destinationFolder) throws IOException {
         Path destinationSubFolder;
 
-//        if (currentData.getFileName().toString().equals(prefixInSource + processTitleInSource + suffixInSource)) {
-//            destinationSubFolder = Paths.get(destinationFolder.toString(), prefixInDestination + processTitleDestination + suffixInDestination);
-//
-//        } else if (currentData.getFileName().toString().equals(processTitleInSource + suffixInSource)) {
-//            destinationSubFolder = Paths.get(destinationFolder.toString(), processTitleDestination + suffixInDestination);
-//        } else {
-//            // get suffix
-            String foldername = currentData.getFileName().toString();
-//            if (foldername.startsWith(processTitleInSource) && foldername.contains("_")) {
-//                String suffix = foldername.substring(foldername.lastIndexOf("_"));
-//                destinationSubFolder = Paths.get(destinationFolder.toString(), processTitleDestination + suffix);
-//            } else {
-                destinationSubFolder = Paths.get(destinationFolder.toString(), foldername);
-//            }
-//        }
+        String foldername = currentData.getFileName().toString();
+        destinationSubFolder = Paths.get(destinationFolder.toString(), foldername);
+
         if (!Files.exists(destinationSubFolder)) {
             Files.createDirectories(destinationSubFolder);
         }
 
-//        if (moveFiles) {
-            Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
-//        } else {
-//            List<Path> files = StorageProvider.getInstance().listFiles(currentData.toString());
-//            for (Path p : files) {
-//                copyFile(p, Paths.get(destinationSubFolder.toString(), p.getFileName().toString()));
-//            }
-//            //            NIOFileUtils.copyDirectory(currentData, destinationSubFolder);
-////        }
+        Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
 
     }
 
+    /**
+     * Move the file
+     *     
+     * @param file
+     * @param destination
+     * @throws IOException
+     */
     private void moveFile(Path file, Path destination) throws IOException {
 
-//        if (moveFiles) {
-            Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
-//        } else {
-//            Files.copy(file, destination, StandardCopyOption.REPLACE_EXISTING);
-//        }
-
+        Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
     }
-    
+
     /**
      * decide if the import shall be executed in the background via GoobiScript or not
      */
