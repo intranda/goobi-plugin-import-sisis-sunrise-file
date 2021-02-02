@@ -19,6 +19,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import de.sub.goobi.config.ConfigurationHelper;
 import lombok.extern.log4j.Log4j2;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
@@ -51,7 +52,6 @@ public class SGMLParser {
     private SubnodeConfiguration config;
 
     private String strConfigRulesetPath = "rulesetPath";
-    private String strConfigOutputPath = "outputPath";
     private String strConfigImagePathFile = "imagePathFile";
     private Prefs prefs;
     private int iCurrentPageNo;
@@ -72,7 +72,7 @@ public class SGMLParser {
     public SGMLParser(SubnodeConfiguration config) throws ConfigurationException, PreferencesException {
 
         this.config = config;
-        strOutputPath = config.getString(strConfigOutputPath);
+        strOutputPath = ConfigurationHelper.getInstance().getTemporaryFolder();
         strImagePath = config.getString(strConfigImagePathFile);
         prefs = new Prefs();
         prefs.loadPrefs(config.getString(strConfigRulesetPath));

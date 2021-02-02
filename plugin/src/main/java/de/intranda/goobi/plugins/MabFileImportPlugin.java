@@ -262,7 +262,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 fileformat.write(fileName);
 
                 // copy all files with new folder names
-                String imagefolder = myconfig.getString("outputPath") + rec.getId();
+                String imagefolder = mmMaker.tempFolder + rec.getId();
                 String strPrefix = myconfig.getString("idPrefix", "");
                 imagefolder = imagefolder.replace(strPrefix, "");
 
@@ -297,7 +297,8 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
         if (!Files.exists(destinationRootFolder)) {
             try {
-                Files.createDirectories(destinationRootFolder);
+                StorageProvider.getInstance().createDirectories(destinationRootFolder);
+//                Files.createDirectories(destinationRootFolder);
             } catch (IOException e) {
                 log.error(e);
             }
@@ -307,7 +308,8 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         if (Files.exists(sourceImageFolder)) {
             if (!Files.exists(destinationImagesFolder)) {
                 try {
-                    Files.createDirectories(destinationImagesFolder);
+                    StorageProvider.getInstance().createDirectories(destinationImagesFolder);
+//                    Files.createDirectories(destinationImagesFolder);
                 } catch (IOException e) {
                     log.error(e);
                 }
@@ -348,10 +350,12 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         destinationSubFolder = Paths.get(destinationFolder.toString(), foldername);
 
         if (!Files.exists(destinationSubFolder)) {
-            Files.createDirectories(destinationSubFolder);
+            StorageProvider.getInstance().createDirectories(destinationSubFolder);
+//            Files.createDirectories(destinationSubFolder);
         }
 
-        Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
+        StorageProvider.getInstance().move(currentData, destinationSubFolder);
+//        Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
 
     }
 
@@ -364,7 +368,8 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
      */
     private void moveFile(Path file, Path destination) throws IOException {
 
-        Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
+        StorageProvider.getInstance().move(file, destination);
+//        Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**

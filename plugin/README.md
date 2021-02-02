@@ -52,7 +52,6 @@ The file is used to configure the plug-in and must be structured as follows:
         <!-- Path to SGML files, if withSGML: -->
         <sgmlPath></sgmlPath>
 
-
         <!-- default publication type if it cannot be detected. If missing or empty, no record will be created -->
         <defaultPublicationType>Monograph</defaultPublicationType>
 

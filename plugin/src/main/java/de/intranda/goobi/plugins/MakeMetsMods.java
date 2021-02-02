@@ -34,6 +34,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import de.sub.goobi.helper.StorageProvider;
 import freemarker.core.Environment;
 import lombok.extern.log4j.Log4j2;
 import ugh.dl.ContentFile;
@@ -47,6 +48,7 @@ import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
 import ugh.fileformats.mets.MetsMods;
+import de.sub.goobi.config.ConfigurationHelper;
 
 @Log4j2
 /**
@@ -61,7 +63,7 @@ public class MakeMetsMods {
 
     //these are the xml config fields:
     private String strRulesetPath = "rulesetPath";
-    private String strOutputPath = "outputPath";
+//    private String strOutputPath = "outputPath";
     private String strImagePathFile = "imagePathFile";
 
     private String strIdPrefix = "";
@@ -102,6 +104,12 @@ public class MakeMetsMods {
 
     //special case: save everything as Monograph:
     private Boolean boAllMono = false;
+
+    public String tempFolder;
+
+    private String mapMVWPath;
+
+    private String mapChildrenPath;
 
     /**
      * ctor
@@ -154,6 +162,10 @@ public class MakeMetsMods {
 
         metaMaker = new MetadataMaker(prefs);
 
+        this.tempFolder = ConfigurationHelper.getInstance().getTemporaryFolder();
+        this.mapMVWPath = this.tempFolder + "mapMVW.txt";
+        this.mapChildrenPath = this.tempFolder + "mapChildren.txt";
+        
         readTagsList();
     }
 
@@ -172,8 +184,8 @@ public class MakeMetsMods {
         Type typeRevMap = new TypeToken<HashMap<String, String>>() {
         }.getType();
 
-        this.map = gson.fromJson(new FileReader(config.getString("mapMVW")), typeMap);
-        this.mapRev = gson.fromJson(new FileReader(config.getString("mapChildren")), typeRevMap);
+        this.map = gson.fromJson(new FileReader(mapMVWPath), typeMap);
+        this.mapRev = gson.fromJson(new FileReader(mapChildrenPath), typeRevMap);
 
     }
 
@@ -372,10 +384,10 @@ public class MakeMetsMods {
     public MetsMods saveMMsFromText(String text) throws IOException, UGHException, JDOMException {
 
         int iImported = 0;
-        String strFolder = config.getString(strOutputPath);
-        if (!strFolder.endsWith("/")) {
-            strFolder = strFolder + "/";
-        }
+//        String strFolder = config.getString(strOutputPath);
+//        if (!strFolder.endsWith("/")) {
+//            strFolder = strFolder + "/";
+//        }
 
         MetsMods mm = null;
 
@@ -418,13 +430,16 @@ public class MakeMetsMods {
                     }
 
                     if (boSave) {
+                        try {
+                            if (boWithSGML) {
+                                sgmlParser.addSGML(mm, currentVolume, strCurrentId);
+                            }
 
-                        if (boWithSGML) {
-                            sgmlParser.addSGML(mm, currentVolume, strCurrentId);
+                            log.debug("Save " + strCurrentId + " line " + iLine);
+                            saveMM(mm, strCurrentPath);
+                        } catch (Exception e) {
+                            log.error("Problem saving " + strCurrentId, e);
                         }
-
-                        log.debug("Save " + strCurrentId + " line " + iLine);
-                        saveMM(mm, strCurrentPath);
                     }
 
                     //stop the import? 
@@ -472,7 +487,7 @@ public class MakeMetsMods {
                             }
 
                             strCurrentId = content;
-                            strCurrentPath = strFolder + strCurrentId + "/";
+                            strCurrentPath = tempFolder + strCurrentId + "/";
 
                             if (lstIdsToImport != null && !lstIdsToImport.isEmpty() && !lstIdsToImport.contains(strCurrentId)) {
                                 boIgnore = true;
@@ -609,7 +624,7 @@ public class MakeMetsMods {
                     }
 
                 } catch (Exception e) {
-                    log.error("Problem with " + strCurrentId + " at line " + iLine, e );    
+                    log.error("Problem with " + strCurrentId + " at line " + iLine, e);
                 }
 
                 iLine++;
@@ -650,9 +665,9 @@ public class MakeMetsMods {
     private void addImageFiles(String strValue, MetsMods mm, String strCurrentId) throws UGHException, IOException {
 
         String strTitel = "Dateinamen Bilder Dissprojekt: Titelblatt: ";
-        if (!strValue.startsWith(strTitel)) {
-            return;
-        }
+        //        if (!strValue.startsWith(strTitel)) {
+        //            return;
+        //        }
 
         String strRem = strValue.replace(strTitel, "");
 
@@ -678,12 +693,24 @@ public class MakeMetsMods {
             }
         }
 
+        //Add any image files explicitly named:
+        String[] words = strValue.split("\\s+");
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+            if (word.endsWith(".jpg") || word.endsWith(".tif") || word.endsWith(".tiff")) {
+                lstImages.add(word);
+            }
+        }
+
         for (String strImage : lstImages) {
             DigitalDocument dd = mm.getDigitalDocument();
             DocStruct physical = dd.getPhysicalDocStruct();
             DocStruct logical = dd.getLogicalDocStruct();
 
-            String strFilename = strImage + ".jpg"; // config.getString(strImagePathFile) + strImage + ".jpg";
+            String strFilename = strImage;
+            if (!strFilename.contains(".")) {
+                strFilename = strFilename + ".jpg"; // config.getString(strImagePathFile) + strImage + ".jpg";
+            }
 
             DocStruct page = null;
 
@@ -729,19 +756,24 @@ public class MakeMetsMods {
         //otherwise:        
         //create subfolder for images, as necessary:
         String strImageFolder = strCurrentPath + "/images/";
-        new File(strImageFolder).mkdirs();
+        Path path = Paths.get(strImageFolder);
+        StorageProvider.getInstance().createDirectories(path);
+//        new File(strImageFolder).mkdirs();
 
         //copy original file:
         String strMasterPrefix = "master_";
         String strMediaSuffix = "_media";
         String strMasterPath = strImageFolder + strMasterPrefix + strIdPrefix + strCurrentId + strMediaSuffix + File.separator;
 
-        new File(strMasterPath).mkdirs();
+        Path path2 = Paths.get(strMasterPath);
+        StorageProvider.getInstance().createDirectories(path2);
+//        new File(strMasterPath).mkdirs();
 
         Path pathSource = Paths.get(file.getAbsolutePath());
         Path pathDest = Paths.get(strMasterPath + strDatei.toLowerCase());
 
-        Files.copy(pathSource, pathDest, StandardCopyOption.REPLACE_EXISTING);
+        StorageProvider.getInstance().copyFile(pathSource, pathDest);
+//        Files.copy(pathSource, pathDest, StandardCopyOption.REPLACE_EXISTING);
         File fileCopy = new File(pathDest.toString());
 
         //first time for this image?
@@ -801,7 +833,8 @@ public class MakeMetsMods {
 
     }
 
-    /**Find the image file, looking in the image folder and subfolders named after the Id of the current data
+    /**
+     * Find the image file, looking in the image folder and subfolders named after the Id of the current data
      * 
      * @param strImage
      * @param strCurrentId
@@ -974,8 +1007,9 @@ public class MakeMetsMods {
      * @param mmNew
      * @param strFolderForMM
      * @throws UGHException
+     * @throws IOException 
      */
-    private void saveMM(MetsMods mmNew, String strFolderForMM) throws UGHException {
+    private void saveMM(MetsMods mmNew, String strFolderForMM) throws UGHException, IOException {
 
         String strFolder = strFolderForMM;
 
@@ -984,12 +1018,21 @@ public class MakeMetsMods {
         }
 
         File folder = new File(strFolder);
-        folder.mkdirs();
+        Path path = Paths.get(strFolder);
+        StorageProvider.getInstance().createDirectories(path);
+//        if (config.isMoveImage()) {
+//            StorageProvider.getInstance().move(imageSourceFolder, path);
+//        } else {
+//            StorageProvider.getInstance().copyDirectory(imageSourceFolder, path);
+//        }
+        
+//        folder.mkdirs();
 
         //remove any old files:
         for (File file : folder.listFiles()) {
             if (!file.isDirectory()) {
-                file.delete();
+                StorageProvider.getInstance().deleteFile(file.toPath());
+//                file.delete();
             }
         }
 
