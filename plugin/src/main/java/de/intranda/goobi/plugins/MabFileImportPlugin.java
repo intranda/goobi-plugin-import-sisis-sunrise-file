@@ -298,7 +298,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         if (!Files.exists(destinationRootFolder)) {
             try {
                 StorageProvider.getInstance().createDirectories(destinationRootFolder);
-//                Files.createDirectories(destinationRootFolder);
             } catch (IOException e) {
                 log.error(e);
             }
@@ -351,11 +350,9 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
         if (!Files.exists(destinationSubFolder)) {
             StorageProvider.getInstance().createDirectories(destinationSubFolder);
-//            Files.createDirectories(destinationSubFolder);
         }
 
         StorageProvider.getInstance().move(currentData, destinationSubFolder);
-//        Files.move(currentData, destinationSubFolder, StandardCopyOption.REPLACE_EXISTING);
 
     }
 
@@ -369,7 +366,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
     private void moveFile(Path file, Path destination) throws IOException {
 
         StorageProvider.getInstance().move(file, destination);
-//        Files.move(file, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**

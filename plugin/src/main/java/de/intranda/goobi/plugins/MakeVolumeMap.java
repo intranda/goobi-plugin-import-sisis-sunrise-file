@@ -10,10 +10,13 @@ import java.util.HashMap;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import com.google.gson.Gson;
 
+import lombok.extern.log4j.Log4j2;
+
 /**
  * Class for making parent-child maps from data in a MAB file.
  * 
  */
+@Log4j2
 public class MakeVolumeMap {
 
     public ArrayList<String> lstFilesVol;
@@ -171,8 +174,7 @@ public class MakeVolumeMap {
                 }
 
             } catch (Exception e) {
-                // TODO: handle exception
-                System.out.println(e.getMessage());
+                log.error(e);
             }
         }
     }
@@ -252,8 +254,7 @@ public class MakeVolumeMap {
                 }
 
             } catch (Exception e) {
-                // TODO: handle exception
-                System.out.println(e.getMessage());
+                log.error(e);
             }
         }
     }

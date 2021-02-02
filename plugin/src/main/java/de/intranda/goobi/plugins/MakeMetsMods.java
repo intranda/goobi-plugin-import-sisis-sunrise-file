@@ -384,10 +384,6 @@ public class MakeMetsMods {
     public MetsMods saveMMsFromText(String text) throws IOException, UGHException, JDOMException {
 
         int iImported = 0;
-//        String strFolder = config.getString(strOutputPath);
-//        if (!strFolder.endsWith("/")) {
-//            strFolder = strFolder + "/";
-//        }
 
         MetsMods mm = null;
 
@@ -665,9 +661,6 @@ public class MakeMetsMods {
     private void addImageFiles(String strValue, MetsMods mm, String strCurrentId) throws UGHException, IOException {
 
         String strTitel = "Dateinamen Bilder Dissprojekt: Titelblatt: ";
-        //        if (!strValue.startsWith(strTitel)) {
-        //            return;
-        //        }
 
         String strRem = strValue.replace(strTitel, "");
 
@@ -709,7 +702,7 @@ public class MakeMetsMods {
 
             String strFilename = strImage;
             if (!strFilename.contains(".")) {
-                strFilename = strFilename + ".jpg"; // config.getString(strImagePathFile) + strImage + ".jpg";
+                strFilename = strFilename + ".jpg"; 
             }
 
             DocStruct page = null;
@@ -758,7 +751,6 @@ public class MakeMetsMods {
         String strImageFolder = strCurrentPath + "/images/";
         Path path = Paths.get(strImageFolder);
         StorageProvider.getInstance().createDirectories(path);
-//        new File(strImageFolder).mkdirs();
 
         //copy original file:
         String strMasterPrefix = "master_";
@@ -767,13 +759,11 @@ public class MakeMetsMods {
 
         Path path2 = Paths.get(strMasterPath);
         StorageProvider.getInstance().createDirectories(path2);
-//        new File(strMasterPath).mkdirs();
 
         Path pathSource = Paths.get(file.getAbsolutePath());
         Path pathDest = Paths.get(strMasterPath + strDatei.toLowerCase());
 
         StorageProvider.getInstance().copyFile(pathSource, pathDest);
-//        Files.copy(pathSource, pathDest, StandardCopyOption.REPLACE_EXISTING);
         File fileCopy = new File(pathDest.toString());
 
         //first time for this image?
@@ -1026,13 +1016,11 @@ public class MakeMetsMods {
 //            StorageProvider.getInstance().copyDirectory(imageSourceFolder, path);
 //        }
         
-//        folder.mkdirs();
 
         //remove any old files:
         for (File file : folder.listFiles()) {
             if (!file.isDirectory()) {
                 StorageProvider.getInstance().deleteFile(file.toPath());
-//                file.delete();
             }
         }
 
