@@ -2,14 +2,13 @@ package de.intranda.goobi.plugins;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +31,6 @@ import org.goobi.production.plugin.interfaces.IImportPluginVersion2;
 import org.goobi.production.properties.ImportProperty;
 import org.jdom2.JDOMException;
 import org.xml.sax.SAXException;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.MassImportForm;
@@ -88,7 +84,6 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
     private MakeMetsMods mmMaker;
     private String collection;
 
-    
     /**
      * Import plugin for MAB files
      * 
@@ -105,7 +100,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         readConfig();
 
         volMaker = new MakeVolumeMap(myconfig);
-        mmMaker = new MakeMetsMods(myconfig);
+        mmMaker = new MakeMetsMods(myconfig, volMaker);
     }
 
     /**
@@ -201,7 +196,63 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
             }
         }
 
-        return recordList;
+        //While we have all the records, make a parent-child map:
+        updateVolMaker(recordList);
+
+        //now give each child record its parent, and remove parents from the list:
+        return addParentsToChildRecords(recordList);
+    }
+
+  //When we have all the records, make a parent-child map:
+    private void updateVolMaker(List<Record> recordList) {
+        for (Record rec : recordList) {
+            String strText = rec.getData();
+            try {
+                volMaker.addTextToMap(strText);
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+
+        try {
+            volMaker.makeReverseMap();
+        } catch (FileNotFoundException e) {
+            log.error(e);
+        }
+    }
+
+    //for each child, get the parent record and add it to the child record
+    private List<Record> addParentsToChildRecords(List<Record> recordList) {
+
+        String prefix = myconfig.getString("idPrefix", "");
+        List<Record> noParentsList = new ArrayList<Record>();
+        HashMap<String, Record> mapRecords = new HashMap<String, Record>();
+
+        for (Record record : recordList) {
+            mapRecords.put(record.getId(), record);
+        }
+
+        for (String childId : volMaker.revMap.keySet()) {
+            Record recChild = mapRecords.get(prefix + childId);
+            Record recParent = mapRecords.get(prefix +  volMaker.revMap.get(childId));
+
+            if (recParent != null) {
+                String strParent = recParent.getData();
+                String strChild = recChild.getData();
+
+                recChild.setData(strParent + System.lineSeparator() + strChild);
+            }
+        }
+
+        //finally remove all the parents from the list,. returning only the children:
+        for (Record record : recordList) {
+            String strId = record.getId().replace(prefix, "");
+            if (!volMaker.map.containsKey(strId)) {
+                noParentsList.add(record);
+            }
+        }
+
+        return noParentsList;
     }
 
     /**
@@ -209,32 +260,14 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
      */
     @Override
     public List<ImportObject> generateFiles(List<Record> records) {
+
         if (StringUtils.isBlank(workflowTitle)) {
             workflowTitle = form.getTemplate().getTitel();
         }
         readConfig();
 
-        //First make a parent-child map:
-        for (Record rec : records) {
-            String strText = rec.getData();
-            try {
-                volMaker.addTextToMap(strText);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        volMaker.makeReverseMap();
-
-        Gson gson = new Gson();
-        Type typeMap = new TypeToken<HashMap<String, List<String>>>() {
-        }.getType();
-        Type typeRevMap = new TypeToken<HashMap<String, String>>() {
-        }.getType();
-
-        mmMaker.map = gson.fromJson(volMaker.getMapGson(), typeMap);
-        mmMaker.mapRev = gson.fromJson(volMaker.getRevMapGson(), typeRevMap);
-
+        updateVolMaker(records);
+        
         //collect parents:
         for (Record rec : records) {
             String strText = rec.getData();
@@ -244,6 +277,8 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
                 log.error("Error while creating collecting parents in the MabFileImportPlugin", e);
             }
         }
+
+        //        mmMaker.removeEmptyParents();
 
         List<ImportObject> answer = new ArrayList<>();
 
@@ -255,6 +290,10 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
             String strText = rec.getData();
             try {
                 Fileformat fileformat = mmMaker.saveMMsFromText(strText);
+
+                if (fileformat == null) {
+                    continue;
+                }
 
                 io.setProcessTitle(rec.getId());
                 String fileName = getImportFolder() + io.getProcessTitle() + ".xml";
@@ -308,7 +347,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
             if (!Files.exists(destinationImagesFolder)) {
                 try {
                     StorageProvider.getInstance().createDirectories(destinationImagesFolder);
-//                    Files.createDirectories(destinationImagesFolder);
+                    //                    Files.createDirectories(destinationImagesFolder);
                 } catch (IOException e) {
                     log.error(e);
                 }
@@ -358,7 +397,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
 
     /**
      * Move the file
-     *     
+     * 
      * @param file
      * @param destination
      * @throws IOException

@@ -63,7 +63,7 @@ public class MakeMetsMods {
 
     //these are the xml config fields:
     private String strRulesetPath = "rulesetPath";
-//    private String strOutputPath = "outputPath";
+    //    private String strOutputPath = "outputPath";
     private String strImagePathFile = "imagePathFile";
 
     private String strIdPrefix = "";
@@ -74,13 +74,6 @@ public class MakeMetsMods {
     //if this is not null, only import datasets with these ids
     ArrayList<String> lstIdsToImport;
 
-    //Map with parents as key, and lists of their children as value
-    HashMap<String, List<String>> map;
-
-    //Map with children as key, parent as value.
-    HashMap<String, String> mapRev;
-
-    //
     private Prefs prefs;
     private HashMap<String, String> mapTags;
     private SubnodeConfiguration config;
@@ -88,7 +81,7 @@ public class MakeMetsMods {
     private int iStopImportAfter = 0;
 
     //MultiVolumeWorks, keyed by their Ids
-    private HashMap<String, MetsMods> mapMVWs;
+    private static HashMap<String, MetsMods> mapMVWs;
 
     private MetadataMaker metaMaker;
     private Boolean boWithSGML;
@@ -107,24 +100,24 @@ public class MakeMetsMods {
 
     public String tempFolder;
 
-    private String mapMVWPath;
-
-    private String mapChildrenPath;
+    private MakeVolumeMap mapper;
 
     /**
      * ctor
      * 
      * @param config
+     * @param volMaker
      * @throws PreferencesException
      * @throws ConfigurationException
      * @throws ParserConfigurationException
      * @throws SAXException
      * @throws IOException
      */
-    public MakeMetsMods(SubnodeConfiguration config)
+    public MakeMetsMods(SubnodeConfiguration config, MakeVolumeMap volMaker)
             throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
         setup(config);
 
+        this.mapper = volMaker;
     }
 
     /**
@@ -140,9 +133,10 @@ public class MakeMetsMods {
     private void setup(SubnodeConfiguration config)
             throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
 
-        this.mapMVWs = new HashMap<String, MetsMods>();
+        if (mapMVWs == null) {
+            mapMVWs = new HashMap<String, MetsMods>();
+        }
         this.config = config;
-        //        lstMM = new ArrayList<MetsMods>();
         this.prefs = new Prefs();
         prefs.loadPrefs(config.getString(strRulesetPath));
         lstIds = new ArrayList<String>();
@@ -163,74 +157,11 @@ public class MakeMetsMods {
         metaMaker = new MetadataMaker(prefs);
 
         this.tempFolder = ConfigurationHelper.getInstance().getTemporaryFolder();
-        this.mapMVWPath = this.tempFolder + "mapMVW.txt";
-        this.mapChildrenPath = this.tempFolder + "mapChildren.txt";
-        
-        readTagsList();
-    }
-
-    /**
-     * Read the json parent-child map files
-     * 
-     * @throws JsonIOException
-     * @throws JsonSyntaxException
-     * @throws FileNotFoundException
-     */
-    private void readJson() throws JsonIOException, JsonSyntaxException, FileNotFoundException {
-
-        Gson gson = new Gson();
-        Type typeMap = new TypeToken<HashMap<String, List<String>>>() {
-        }.getType();
-        Type typeRevMap = new TypeToken<HashMap<String, String>>() {
-        }.getType();
-
-        this.map = gson.fromJson(new FileReader(mapMVWPath), typeMap);
-        this.mapRev = gson.fromJson(new FileReader(mapChildrenPath), typeRevMap);
-
-    }
-
-    /**
-     * Read the file, and save the MetsMods files.
-     * 
-     * @param mabFile
-     * @throws IOException
-     * @throws UGHException
-     * @throws JDOMException
-     */
-    public void parseNewMabFile(String mabFile) throws IOException, UGHException, JDOMException {
-
-        if (map == null) {
-            readJson();
-        }
+        //        this.mapMVWPath = this.tempFolder + "mapMVW.txt";
+        //        this.mapChildrenPath = this.tempFolder + "mapChildren.txt";
 
         readTagsList();
-
         readIdsList();
-
-        collectMultiVolumeWorks(mabFile);
-
-        //now remove all map entries which do not exist as MVWs:
-        removeEmptyParents();
-
-        saveMMs(mabFile);
-    }
-
-    /**
-     * Remove parents from list if they have not been created.
-     */
-    private void removeEmptyParents() {
-
-        ArrayList<String> lstEmptyParents = new ArrayList<String>();
-
-        for (String strParent : map.keySet()) {
-            if (!mapMVWs.containsKey(strParent)) {
-                lstEmptyParents.add(strParent);
-            }
-        }
-
-        for (String strMissingParent : lstEmptyParents) {
-            map.remove(strMissingParent);
-        }
     }
 
     /**
@@ -258,6 +189,8 @@ public class MakeMetsMods {
     public void collectMultiVolumeWorksFromText(String text) throws IOException, UGHException, JDOMException {
         if ((text != null) && (text.length() != 0)) {
 
+            //            mapper.readJson();
+
             MetsMods mm = makeMM("MultiVolumeWork");
             DocStruct logical = mm.getDigitalDocument().getLogicalDocStruct();
 
@@ -276,8 +209,14 @@ public class MakeMetsMods {
             while ((str = reader.readLine()) != null) {
                 str = str.trim();
 
+                if (str.length() < 4) {
+                    continue;
+                }
+
+                String tag = str.substring(0, 4);
+
                 //finished one ?
-                if (str.length() == 0 && boMVW) {
+                if (tag.contentEquals("9999") && boMVW) {
 
                     if (boWithSGML) {
                         sgmlParser.addSGML(mm, currentVolume, strCurrentId);
@@ -293,12 +232,6 @@ public class MakeMetsMods {
                     logical.addMetadata(mdCollection);
                 }
 
-                if (str.length() < 4) {
-                    continue;
-                }
-
-                String tag = str.substring(0, 4);
-
                 try {
 
                     if (str.length() > 5) {
@@ -308,8 +241,8 @@ public class MakeMetsMods {
                         String content = str.substring(iValue + 1, str.length());
 
                         //Check for parent:
-                        if (map != null && tag.contentEquals("0000")) {
-                            boMVW = map.containsKey(content);
+                        if (mapper.map != null && tag.contentEquals("0000")) {
+                            boMVW = mapper.map.containsKey(content);
                         }
 
                         //only carry on for parents
@@ -383,9 +316,13 @@ public class MakeMetsMods {
      */
     public MetsMods saveMMsFromText(String text) throws IOException, UGHException, JDOMException {
 
+        //        mapper.readJson();
+
         int iImported = 0;
 
         MetsMods mm = null;
+        Boolean boMVW = false;
+        String strMMId = "";
 
         if ((text != null) && (text.length() != 0)) {
 
@@ -398,7 +335,7 @@ public class MakeMetsMods {
 
             BufferedReader reader = new BufferedReader(new StringReader(text));
             String str = "";
-            Boolean boMVW = false;
+
             Boolean boChild = false;
             String strCurrentId = "";
 
@@ -420,23 +357,18 @@ public class MakeMetsMods {
                         containedWork = null;
                     }
 
-                    Boolean boSave = true;
-                    if (lstIdsToImport != null && !lstIdsToImport.isEmpty() && !lstIdsToImport.contains(strCurrentId)) {
-                        boSave = false;
-                    }
-
-                    if (boSave) {
-                        try {
-                            if (boWithSGML) {
-                                sgmlParser.addSGML(mm, currentVolume, strCurrentId);
-                            }
-
-                            log.debug("Save " + strCurrentId + " line " + iLine);
-                            saveMM(mm, strCurrentPath);
-                        } catch (Exception e) {
-                            log.error("Problem saving " + strCurrentId, e);
+                    //                    if (boSave) {
+                    try {
+                        if (boWithSGML) {
+                            sgmlParser.addSGML(mm, currentVolume, strCurrentId);
                         }
+
+                        //                            log.debug("Save " + strCurrentId + " line " + iLine);
+                        //                            saveMM(mm, strCurrentPath);
+                    } catch (Exception e) {
+                        log.error("Problem saving " + strCurrentId, e);
                     }
+                    //                    }
 
                     //stop the import? 
                     iImported++;
@@ -462,13 +394,13 @@ public class MakeMetsMods {
                         //Check for parent:
                         if (tag.contentEquals("0000")) {
 
-                            boMVW = (map != null) && map.containsKey(content);
+                            boMVW = (mapper.map != null) && mapper.map.containsKey(content);
 
                             //Only a child if the parent exists
-                            boChild = !boAllMono && (mapRev != null) && mapRev.containsKey(content);
+                            boChild = !boAllMono && (mapper.revMap != null) && mapper.revMap.containsKey(content);
                             if (boChild) {
-                                String strParent = mapRev.get(content);
-                                if (!map.containsKey(strParent)) {
+                                String strParent = mapper.revMap.get(content);
+                                if (!mapper.map.containsKey(strParent)) {
                                     boChild = false;
                                 }
                             }
@@ -508,7 +440,7 @@ public class MakeMetsMods {
 
                             if (boChild) {
                                 //for a volume, get the logical docstruct of the parent, and add the Volume to it:
-                                String strParent = mapRev.get(strCurrentId);
+                                String strParent = mapper.revMap.get(strCurrentId);
 
                                 if (mapMVWs.containsKey(strParent)) {
                                     MetsMods mmParent = mapMVWs.get(strParent);
@@ -599,6 +531,7 @@ public class MakeMetsMods {
 
                                 strCurrentId = content;
                                 md.setValue(strIdPrefix + md.getValue());
+                                strMMId = md.getValue();
                                 logical.addMetadata(md);
 
                                 //add catalogId
@@ -628,7 +561,17 @@ public class MakeMetsMods {
 
         }
 
-        return mm;
+        Boolean boSave = true;
+        if (lstIdsToImport != null && !lstIdsToImport.isEmpty() && !lstIdsToImport.contains(strMMId)) {
+            boSave = false;
+        }
+
+        //for a parent, return null so that it is not saved;
+        if (boMVW || !boSave) {
+            return null;
+        } else {
+            return mm;
+        }
     }
 
     /**
@@ -702,7 +645,7 @@ public class MakeMetsMods {
 
             String strFilename = strImage;
             if (!strFilename.contains(".")) {
-                strFilename = strFilename + ".jpg"; 
+                strFilename = strFilename + ".jpg";
             }
 
             DocStruct page = null;
@@ -748,7 +691,7 @@ public class MakeMetsMods {
 
         //otherwise:        
         //create subfolder for images, as necessary:
-        String strImageFolder = strCurrentPath + "/images/";
+        String strImageFolder = strCurrentPath + "images/";
         Path path = Paths.get(strImageFolder);
         StorageProvider.getInstance().createDirectories(path);
 
@@ -908,10 +851,10 @@ public class MakeMetsMods {
 
             if (boOnlyFamilies) {
                 lstIdsToImport = new ArrayList<String>();
-                for (String parent : map.keySet()) {
+                for (String parent : mapper.map.keySet()) {
                     lstIdsToImport.add(parent);
                 }
-                for (String child : mapRev.keySet()) {
+                for (String child : mapper.revMap.keySet()) {
                     lstIdsToImport.add(child);
                 }
 
@@ -991,43 +934,42 @@ public class MakeMetsMods {
         return newMM;
     }
 
-    /**
-     * Save the MetsMods file
-     * 
-     * @param mmNew
-     * @param strFolderForMM
-     * @throws UGHException
-     * @throws IOException 
-     */
-    private void saveMM(MetsMods mmNew, String strFolderForMM) throws UGHException, IOException {
-
-        String strFolder = strFolderForMM;
-
-        if (!strFolder.endsWith("/")) {
-            strFolder = strFolder + "/";
-        }
-
-        File folder = new File(strFolder);
-        Path path = Paths.get(strFolder);
-        StorageProvider.getInstance().createDirectories(path);
-//        if (config.isMoveImage()) {
-//            StorageProvider.getInstance().move(imageSourceFolder, path);
-//        } else {
-//            StorageProvider.getInstance().copyDirectory(imageSourceFolder, path);
-//        }
-        
-
-        //remove any old files:
-        for (File file : folder.listFiles()) {
-            if (!file.isDirectory()) {
-                StorageProvider.getInstance().deleteFile(file.toPath());
-            }
-        }
-
-        String strFilename = strFolder + "meta.xml";
-        mmNew.write(strFilename);
-
-        //reset page numbers:
-        this.iCurrentPageNo = 1;
-    }
+    //    /**
+    //     * Save the MetsMods file
+    //     * 
+    //     * @param mmNew
+    //     * @param strFolderForMM
+    //     * @throws UGHException
+    //     * @throws IOException
+    //     */
+    //    private void saveMM(MetsMods mmNew, String strFolderForMM) throws UGHException, IOException {
+    //
+    //        String strFolder = strFolderForMM;
+    //
+    //        if (!strFolder.endsWith("/")) {
+    //            strFolder = strFolder + "/";
+    //        }
+    //
+    //        File folder = new File(strFolder);
+    //        Path path = Paths.get(strFolder);
+    //        StorageProvider.getInstance().createDirectories(path);
+    //        //        if (config.isMoveImage()) {
+    //        //            StorageProvider.getInstance().move(imageSourceFolder, path);
+    //        //        } else {
+    //        //            StorageProvider.getInstance().copyDirectory(imageSourceFolder, path);
+    //        //        }
+    //
+    //        //remove any old files:
+    //        for (File file : folder.listFiles()) {
+    //            if (!file.isDirectory()) {
+    //                StorageProvider.getInstance().deleteFile(file.toPath());
+    //            }
+    //        }
+    //
+    //        String strFilename = strFolder + "meta.xml";
+    //        mmNew.write(strFilename);
+    //
+    //        //reset page numbers:
+    //        this.iCurrentPageNo = 1;
+    //    }
 }
