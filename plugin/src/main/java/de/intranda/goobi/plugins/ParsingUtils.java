@@ -40,7 +40,11 @@ public final class ParsingUtils {
     public static String readFileToString(File file) throws IOException {
         
         byte[] encoded = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
-        return StandardCharsets.UTF_8.decode(ByteBuffer.wrap(encoded)).toString();
+        String strOrig = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(encoded)).toString();
+        
+        //remove BOM markers:
+        String strFinal = strOrig.replace("\uFEFF", "");
+        return strFinal;
     }
 
 }
