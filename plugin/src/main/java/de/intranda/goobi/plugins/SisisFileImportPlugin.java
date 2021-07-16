@@ -47,10 +47,10 @@ import ugh.exceptions.UGHException;
 
 @PluginImplementation
 @Log4j2
-public class MabFileImportPlugin implements IImportPluginVersion2 {
+public class SisisFileImportPlugin implements IImportPluginVersion2 {
 
     @Getter
-    private String title = "intranda_import_mab_file";
+    private String title = "intranda_import_sisis_sunrise_file";
     @Getter
     private PluginType type = PluginType.Import;
 
@@ -93,7 +93,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
      * @throws ConfigurationException
      * @throws PreferencesException
      */
-    public MabFileImportPlugin() throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
+    public SisisFileImportPlugin() throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
         importTypes = new ArrayList<>();
         importTypes.add(ImportType.FILE);
 
@@ -203,7 +203,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         return addParentsToChildRecords(recordList);
     }
 
-  //When we have all the records, make a parent-child map:
+    //When we have all the records, make a parent-child map:
     private void updateVolMaker(List<Record> recordList) {
         for (Record rec : recordList) {
             String strText = rec.getData();
@@ -225,8 +225,8 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
     private List<Record> addParentsToChildRecords(List<Record> recordList) {
 
         String prefix = myconfig.getString("idPrefix", "");
-        List<Record> noParentsList = new ArrayList<Record>();
-        HashMap<String, Record> mapRecords = new HashMap<String, Record>();
+        List<Record> noParentsList = new ArrayList<>();
+        HashMap<String, Record> mapRecords = new HashMap<>();
 
         for (Record record : recordList) {
             mapRecords.put(record.getId(), record);
@@ -267,7 +267,7 @@ public class MabFileImportPlugin implements IImportPluginVersion2 {
         readConfig();
 
         updateVolMaker(records);
-        
+
         //collect parents:
         for (Record rec : records) {
             String strText = rec.getData();
