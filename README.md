@@ -1,8 +1,8 @@
-# Goobi workflow Plugin: goobi-plugin-import-mab_file
+# Goobi workflow Plugin: goobi-plugin-import-sisis-sunrise-file
 
 <img src="https://goobi.io/wp-content/uploads/logo_goobi_plugin.png" align="right" style="margin:0 0 20px 20px;" alt="Plugin for Goobi workflow" width="175" height="109">
 
-This is the MAB file Goobi import plugin. It imports MAB files into Goobi workflow, converting the individual entries into Goobi processes.
+This is the Sisis SunRise file Goobi import plugin. It imports MAB files into Goobi workflow, converting the individual entries into Goobi processes.
 
 This is a plugin for Goobi workflow, the open source workflow tracking software for digitisation projects. More information about Goobi workflow is available under https://goobi.io. If you want to get in touch with the user community simply go to https://community.goobi.io.
 
@@ -15,8 +15,8 @@ Detail | Description
 **Plugin identifier**       | intranda_import_mab_file
 **Plugin type**             | Import plugin
 **Licence**                 | GPL 2.0 or newer
-**Documentation (German)**  | https://docs.goobi.io/goobi-workflow-plugins-de/import/intranda_import_mab_file
-**Documentation (English)** | https://docs.goobi.io/goobi-workflow-plugins-en/import/intranda_import_mab_file
+**Documentation (German)**  | https://docs.goobi.io/goobi-workflow-plugins-de/import/intranda_import_sisis_sunrise_file
+**Documentation (English)** | https://docs.goobi.io/goobi-workflow-plugins-en/import/intranda_import_sisis_sunrise_file
 
 ## Goobi details
 
