@@ -1,4 +1,4 @@
-## Documentation for importing MAB2 files
+## Documentation for importing SISIS Sunrise files
 
 ## Description
 
@@ -10,15 +10,15 @@ The programme examines the stored MAB2 file and translates the metadata fields f
 The programme consists of three files:
 
 ```
-plugin_intranda_import_mab_file.jar
-plugin_intranda_import_mab_file.xml
+plugin_intranda_import_sisis_sunrise_file.jar
+plugin_intranda_import_sisis_sunrise_file.xml
 tags.txt
 ```
 
-The file `"plugin_intranda_import_mab_file.jar"` contains the program logic and is an executable file, and should be copied into
+The file `"plugin_intranda_import_sisis_sunrise_file.jar"` contains the program logic and is an executable file, and should be copied into
 `/opt/digiverso/goobi/plugins/import`.
 
-The file ``goobi-plugin-import-mab.xml`` is the config file, and should be copied into `/opt/digiverso/goobi/config/`.
+The file ``goobi-plugin-import-sisis_sunrise_file.xml`` is the config file, and should be copied into `/opt/digiverso/goobi/config/`.
 
 
 
@@ -106,11 +106,11 @@ The element `"mapChildren"`
 specifies the path to a JSON file that stores the same mapping in reverse. So for each volume ID belonging to a WMD, the ID of the parent is mapped.  
 
 The element `"listIDs"`
-specifies the path to a text file containing a list fo Ids. If this is specified, then only datasets with these ids will be imported from the MAB file. 
+specifies the path to a text file containing a list fo Ids. If this is specified, then only datasets with these ids will be imported from the sisis file. 
 
 ## Mode of operation
 
-The working method is as follows: To use the import, the mass import area must be opened in the process templates and the `intranda_import_mab_file` must be selected in the File upload import tab. A MAB file can then be uploaded and imported.
+The working method is as follows: To use the import, the mass import area must be opened in the process templates and the `intranda_import_sisis_sunrise_file` must be selected in the File upload import tab. A MAB file can then be uploaded and imported.
 
 
 ### Import
