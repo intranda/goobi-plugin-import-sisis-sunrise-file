@@ -134,5 +134,9 @@
       <artifactId>jsoup</artifactId>
       <version>1.13.1</version>
     </dependency>
-  </dependencies>
+</dependencies>
+ <scm>
+    <url>scm:git:ssh://git@gitea.intranda.com:goobi-workflow/goobi-plugin-import-sisis-sunrise-file.git</url>
+    <connection>scm:git:ssh://git@gitea.intranda.com:goobi-workflow/goobi-plugin-import-sisis-sunrise-file.git</connection>
+  </scm>
 </project>
