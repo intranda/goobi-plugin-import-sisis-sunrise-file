@@ -182,6 +182,12 @@ public class SisisFileImportPlugin implements IImportPluginVersion2 {
                         strId = "";
                     }
                 }
+                if (recordList.isEmpty()) {
+                    Record r = new Record();
+                    r.setId(strId);
+                    r.setData(strCurrent);
+                    recordList.add(r);
+                }
             }
 
         } catch (Exception e) {
