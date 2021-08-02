@@ -6,7 +6,7 @@
   <properties>
     <jar.name>plugin_intranda_import_sisis_sunrise_file</jar.name>
     <dest.folder>/opt/digiverso/goobi/plugins/import/</dest.folder>
-    <goobi.version>21.06.7</goobi.version>
+    <goobi.version>21.07</goobi.version>
   </properties>
   <distributionManagement>
     <repository>
@@ -134,8 +134,8 @@
       <artifactId>jsoup</artifactId>
       <version>1.13.1</version>
     </dependency>
-</dependencies>
- <scm>
+  </dependencies>
+  <scm>
     <url>scm:git:ssh://git@gitea.intranda.com:goobi-workflow/goobi-plugin-import-sisis-sunrise-file.git</url>
     <connection>scm:git:ssh://git@gitea.intranda.com:goobi-workflow/goobi-plugin-import-sisis-sunrise-file.git</connection>
   </scm>
