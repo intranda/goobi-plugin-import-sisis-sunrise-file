@@ -40,7 +40,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import ugh.dl.DocStruct;
 import ugh.dl.Fileformat;
+import ugh.dl.Metadata;
+import ugh.dl.MetadataType;
 import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
@@ -240,7 +243,7 @@ public class SisisFileImportPlugin implements IImportPluginVersion2 {
 
         for (String childId : volMaker.revMap.keySet()) {
             Record recChild = mapRecords.get(prefix + childId);
-            Record recParent = mapRecords.get(prefix +  volMaker.revMap.get(childId));
+            Record recParent = mapRecords.get(prefix + volMaker.revMap.get(childId));
 
             if (recParent != null) {
                 String strParent = recParent.getData();
@@ -299,6 +302,27 @@ public class SisisFileImportPlugin implements IImportPluginVersion2 {
 
                 if (fileformat == null) {
                     continue;
+                }
+                DocStruct logical = fileformat.getDigitalDocument().getLogicalDocStruct();
+                // check if collection exists, otherwise add it
+                if (rec.getCollections() != null && rec.getCollections().size() > 0) {
+                    MetadataType type = prefs.getMetadataTypeByName("singleDigCollection");
+                    List<? extends Metadata> mdl = logical.getAllMetadataByType(type);
+                    if (mdl == null || mdl.isEmpty()) {
+                        Metadata md = new Metadata(type);
+                        md.setValue(rec.getCollections().get(0));
+                        logical.addMetadata(md);
+                    }
+
+                    if (logical.getType().isAnchor()) {
+                        DocStruct child = logical.getAllChildren().get(0);
+                        mdl = child.getAllMetadataByType(type);
+                        if (mdl == null || mdl.isEmpty()) {
+                            Metadata md = new Metadata(type);
+                            md.setValue(rec.getCollections().get(0));
+                            child.addMetadata(md);
+                        }
+                    }
                 }
 
                 io.setProcessTitle(rec.getId());
