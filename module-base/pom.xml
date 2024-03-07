@@ -2,9 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.goobi.workflow.plugin</groupId>
-    <artifactId>plugin-import-sisis_sunrise_file</artifactId>
+    <artifactId>plugin-import-sisis-sunrise-file</artifactId>
     <version>24.03-SNAPSHOT</version>
   </parent>
-  <artifactId>plugin-import-sisis_sunrise_file-base</artifactId>
+  <artifactId>plugin-import-sisis-sunrise-file-base</artifactId>
   <packaging>jar</packaging>
 </project>
