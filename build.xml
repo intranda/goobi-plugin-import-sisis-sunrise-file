@@ -9,7 +9,7 @@
 		<exec executable="mvn">
 			<arg value="package"/>
 		</exec>
-		<copy file="target/plugin_intranda_import_${name}.jar" todir="/opt/digiverso/goobi/plugins/import/" overwrite="true"/>
+		<copy file="module-base/target/plugin-import-sisis-sunrise-file-base.jar" todir="/opt/digiverso/goobi/plugins/import/" overwrite="true"/>
 	</target>
 
 </project>

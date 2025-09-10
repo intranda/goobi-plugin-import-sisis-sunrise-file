@@ -1,18 +1,12 @@
 package de.intranda.goobi.plugins;
 
-import java.lang.reflect.Type;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,15 +23,11 @@ import org.apache.commons.lang.SystemUtils;
 import org.jdom2.JDOMException;
 import org.xml.sax.SAXException;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
-
+import de.sub.goobi.config.ConfigurationHelper;
 import de.sub.goobi.helper.StorageProvider;
-import freemarker.core.Environment;
 import lombok.extern.log4j.Log4j2;
 import ugh.dl.ContentFile;
+import ugh.dl.Corporate;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
 import ugh.dl.DocStructType;
@@ -48,7 +38,6 @@ import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.UGHException;
 import ugh.fileformats.mets.MetsMods;
-import de.sub.goobi.config.ConfigurationHelper;
 
 @Log4j2
 /**
@@ -134,13 +123,13 @@ public class MakeMetsMods {
             throws PreferencesException, ConfigurationException, ParserConfigurationException, SAXException, IOException {
 
         if (mapMVWs == null) {
-            mapMVWs = new HashMap<String, MetsMods>();
+            mapMVWs = new HashMap<>();
         }
         this.config = config;
         this.prefs = new Prefs();
         prefs.loadPrefs(config.getString(strRulesetPath));
-        lstIds = new ArrayList<String>();
-        lstTopLevelMetadata = new ArrayList<String>();
+        lstIds = new ArrayList<>();
+        lstTopLevelMetadata = new ArrayList<>();
 
         iStopImportAfter = config.getInt("importFirst", 0);
 
@@ -257,7 +246,7 @@ public class MakeMetsMods {
                         if (md != null) {
 
                             //already have title? then include as OtherTitle
-                            if (md.getType().getName().equals("TitleDocMain")) {
+                            if ("TitleDocMain".equals(md.getType().getName())) {
 
                                 if (logical.getAllMetadataByType(prefs.getMetadataTypeByName("TitleDocMain")).size() != 0) {
                                     md = metaMaker.getMetadata("OtherTitle", content);
@@ -266,12 +255,14 @@ public class MakeMetsMods {
 
                             if (md.getType().getIsPerson()) {
                                 logical.addPerson((Person) md);
+                            } else if (md.getType().isCorporate()) {
+                                logical.addCorporate((Corporate) md);
                             } else {
                                 logical.addMetadata(md);
                             }
 
                             //set GoobiId:
-                            if (md.getType().getName().equals("CatalogIDDigital")) {
+                            if ("CatalogIDDigital".equals(md.getType().getName())) {
                                 strCurrentId = content;
 
                                 //add catalogId
@@ -370,7 +361,7 @@ public class MakeMetsMods {
                     }
                     //                    }
 
-                    //stop the import? 
+                    //stop the import?
                     iImported++;
                     if (iStopImportAfter != 0 && iImported >= iStopImportAfter) {
                         System.out.println("Imported first" + iStopImportAfter);
@@ -485,26 +476,26 @@ public class MakeMetsMods {
                             continue;
                         }
 
-                        if (!boWithSGML && tag.equals("1040")) {
+                        if (!boWithSGML && "1040".equals(tag)) {
                             addImageFiles(content, mm, strCurrentId);
                             continue;
                         }
 
                         String strTag = mapTags.get(tag);
 
-                        if (strTag != null && strTag.equals("ContainedWork")) {
+                        if (strTag != null && "ContainedWork".equals(strTag)) {
 
                             //create ContainedWork:
                             DocStructType contWorkType = prefs.getDocStrctTypeByName("ContainedWork");
                             containedWork = mm.getDigitalDocument().createDocStruct(contWorkType);
                             containedWork.addMetadata(metaMaker.getMetadata("TitleDocMain", content));
                             continue;
-                        } else if (containedWork != null && tag.equalsIgnoreCase("0365")) {
+                        } else if (containedWork != null && "0365".equalsIgnoreCase(tag)) {
 
                             //add data to ContainedWork
                             containedWork.addMetadata(metaMaker.getMetadata("Note", content));
                             continue;
-                        } else if (containedWork != null && tag.equalsIgnoreCase("0369")) {
+                        } else if (containedWork != null && "0369".equalsIgnoreCase(tag)) {
 
                             //add data to ContainedWork
                             containedWork.addMetadata(metaMaker.getMetadata("PublisherName", content));
@@ -516,7 +507,7 @@ public class MakeMetsMods {
                         if (md != null) {
 
                             //already have title? then include as OtherTitle
-                            if (md.getType().getName().equals("TitleDocMain")) {
+                            if ("TitleDocMain".equals(md.getType().getName())) {
 
                                 if (logical.getAllMetadataByType(prefs.getMetadataTypeByName("TitleDocMain")).size() != 0) {
                                     md = metaMaker.getMetadata("OtherTitle", content);
@@ -526,8 +517,9 @@ public class MakeMetsMods {
                             if (md.getType().getIsPerson()) {
 
                                 logical.addPerson((Person) md);
-
-                            } else if (md.getType().getName().equals("CatalogIDDigital")) {
+                            } else if (md.getType().isCorporate()) {
+                                logical.addCorporate((Corporate) md);
+                            } else if ("CatalogIDDigital".equals(md.getType().getName())) {
 
                                 strCurrentId = content;
                                 md.setValue(strIdPrefix + md.getValue());
@@ -541,7 +533,7 @@ public class MakeMetsMods {
                             } else {
 
                                 //CatalogIDMainSeries from 0004 trump it from 0001
-                                if (tag.equals("0004") && !logical.getAllMetadataByType(md.getType()).isEmpty()) {
+                                if ("0004".equals(tag) && !logical.getAllMetadataByType(md.getType()).isEmpty()) {
                                     logical.removeMetadata(logical.getAllMetadataByType(md.getType()).get(0));
                                 }
 
@@ -607,14 +599,14 @@ public class MakeMetsMods {
 
         String strRem = strValue.replace(strTitel, "");
 
-        ArrayList<String> lstImages = new ArrayList<String>();
+        ArrayList<String> lstImages = new ArrayList<>();
 
         if (!strRem.contains(";")) {
             lstImages.add(strRem);
         } else {
             String[] lstStrings = strRem.split(";");
-            for (int i = 0; i < lstStrings.length; i++) {
-                String strImage = lstStrings[i].replace("Widmung01:", "");
+            for (String lstString : lstStrings) {
+                String strImage = lstString.replace("Widmung01:", "");
                 strImage = strImage.replace("Widmung02:", "");
                 strImage = strImage.replace("Widmung03:", "");
                 strImage = strImage.replace("Widmung04:", "");
@@ -631,8 +623,7 @@ public class MakeMetsMods {
 
         //Add any image files explicitly named:
         String[] words = strValue.split("\\s+");
-        for (int i = 0; i < words.length; i++) {
-            String word = words[i];
+        for (String word : words) {
             if (word.endsWith(".jpg") || word.endsWith(".tif") || word.endsWith(".tiff")) {
                 lstImages.add(word);
             }
@@ -689,7 +680,7 @@ public class MakeMetsMods {
 
         String strId = strCurrentId;
 
-        //otherwise:        
+        //otherwise:
         //create subfolder for images, as necessary:
         String strImageFolder = strCurrentPath + "images/";
         Path path = Paths.get(strImageFolder);
@@ -813,8 +804,8 @@ public class MakeMetsMods {
         FileInputStream fis = new FileInputStream(toRead);
         Scanner sc = new Scanner(fis);
 
-        try {
-            mapTags = new HashMap<String, String>();
+        try (sc) {
+            mapTags = new HashMap<>();
 
             //read data from file line by line:
             String currentLine;
@@ -831,7 +822,6 @@ public class MakeMetsMods {
                 mapTags.put(st.nextToken(), st.nextToken());
             }
         } finally {
-            sc.close();
             fis.close();
         }
     }
@@ -850,7 +840,7 @@ public class MakeMetsMods {
             Boolean boOnlyFamilies = config.getBoolean("onlyFamilies", false);
 
             if (boOnlyFamilies) {
-                lstIdsToImport = new ArrayList<String>();
+                lstIdsToImport = new ArrayList<>();
                 for (String parent : mapper.map.keySet()) {
                     lstIdsToImport.add(parent);
                 }
@@ -868,8 +858,8 @@ public class MakeMetsMods {
         FileInputStream fis = new FileInputStream(toRead);
         Scanner sc = new Scanner(fis);
 
-        try {
-            lstIdsToImport = new ArrayList<String>();
+        try (sc) {
+            lstIdsToImport = new ArrayList<>();
 
             //read data from file line by line:
             String currentLine;
@@ -888,7 +878,6 @@ public class MakeMetsMods {
 
             Collections.sort(lstIdsToImport);
         } finally {
-            sc.close();
             fis.close();
         }
     }
@@ -936,7 +925,7 @@ public class MakeMetsMods {
 
     //    /**
     //     * Save the MetsMods file
-    //     * 
+    //     *
     //     * @param mmNew
     //     * @param strFolderForMM
     //     * @throws UGHException

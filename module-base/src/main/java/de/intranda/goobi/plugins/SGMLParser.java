@@ -2,7 +2,6 @@ package de.intranda.goobi.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,9 +10,7 @@ import java.util.ArrayList;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.SubnodeConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.SystemUtils;
-import org.jfree.util.Log;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -65,6 +62,7 @@ public class SGMLParser {
 
     /**
      * ctor
+     * 
      * @param config
      * @throws ConfigurationException
      * @throws PreferencesException
@@ -81,7 +79,7 @@ public class SGMLParser {
     }
 
     /**
-     * Get  the structure data from a SGML file, and add it to the current volume
+     * Get the structure data from a SGML file, and add it to the current volume
      * 
      * @param mm
      * @param currentVolume
@@ -105,13 +103,13 @@ public class SGMLParser {
 
         if (sgml.exists()) {
             parse(sgml);
-        } else  {
+        } else {
             log.debug("No SGML for " + strId);
         }
     }
 
     /**
-     * Parse the sgml file 
+     * Parse the sgml file
      * 
      * @param sgml
      * @throws IOException
@@ -152,10 +150,10 @@ public class SGMLParser {
 
             Elements elts = elt1.children();
             addPrepages(elts);
-            
+
             for (Element elt2 : elts) {
 
-                if (elt2.tagName().equalsIgnoreCase("div")) {
+                if ("div".equalsIgnoreCase(elt2.tagName())) {
 
                     if (currentVolume != null) {
                         addDiv(elt2, currentVolume);
@@ -173,22 +171,22 @@ public class SGMLParser {
 
         }
 
-        //for Privatrecht, looks like this: 
+        //for Privatrecht, looks like this:
         if (!boWithEbind) {
             for (Element elt1 : elt.getElementsByTag("body")) {
                 Elements elts = elt1.children();
 
                 addPrepages(elts);
-                
+
                 for (Element elt2 : elts) {
-                      if (elt2.tagName().equalsIgnoreCase("div")) {
+                    if ("div".equalsIgnoreCase(elt2.tagName())) {
                         if (currentVolume != null) {
                             addDiv(elt2, currentVolume);
                         } else {
                             try {
                                 addDiv(elt2, logical);
                             } catch (TypeNotAllowedAsChildException e) {
-                             log.error(e);
+                                log.error(e);
                             }
                         }
                     }
@@ -209,10 +207,10 @@ public class SGMLParser {
      * @throws TypeNotAllowedAsChildException
      */
     private void addPrepages(Elements elts) throws TypeNotAllowedForParentException, UGHException, IOException, TypeNotAllowedAsChildException {
-    
+
         DocStruct dsEintrag = dd.createDocStruct(prefs.getDocStrctTypeByName("Prepage"));
         Boolean boPrepages = false;
-      
+
         DocStruct dsTop = currentVolume;
         if (dsTop == null) {
             dsTop = logical;
@@ -223,7 +221,7 @@ public class SGMLParser {
             try {
                 //catch case with images outside div:
                 String strDocType = dsTop.getType().getName();
-                if (elt2.tagName().equalsIgnoreCase("page") && !strDocType.contentEquals("MultiVolumeWork")) {
+                if ("page".equalsIgnoreCase(elt2.tagName()) && !strDocType.contentEquals("MultiVolumeWork")) {
 
                     for (Element eltImg : elt2.getElementsByTag("img")) {
                         DocStruct page = getAndSavePage(eltImg);
@@ -245,7 +243,7 @@ public class SGMLParser {
                 log.error(e);
             }
         }
-        
+
         if (boPrepages) {
             dsTop.addChild(dsEintrag);
         }
@@ -253,7 +251,7 @@ public class SGMLParser {
     }
 
     /**
-     * Parse 
+     * Parse
      * 
      * @param elt2
      * @param dsParent
@@ -274,12 +272,12 @@ public class SGMLParser {
         dsEintrag.addMetadata(md);
         //        }
 
-        ArrayList<DocStruct> pages = new ArrayList<DocStruct>();
+        ArrayList<DocStruct> pages = new ArrayList<>();
 
         Elements children = elt2.children();
         for (Element eltPage : children) {
 
-            if (eltPage.tagName().equalsIgnoreCase("div")) {
+            if ("div".equalsIgnoreCase(eltPage.tagName())) {
                 ArrayList<DocStruct> childPages = addDiv(eltPage, dsEintrag);
 
                 //add the child pages to the parent struct:
@@ -292,7 +290,7 @@ public class SGMLParser {
                 }
             }
 
-            if (eltPage.tagName().equalsIgnoreCase("page")) {
+            if ("page".equalsIgnoreCase(eltPage.tagName())) {
 
                 for (Element eltImg : eltPage.getElementsByTag("img")) {
                     DocStruct page = getAndSavePage(eltImg);
@@ -337,7 +335,7 @@ public class SGMLParser {
         for (Element elt : eltHeader.getAllElements()) {
 
             String strName = elt.tagName();
-            if (strName.equalsIgnoreCase("titlestmt")) {
+            if ("titlestmt".equalsIgnoreCase(strName)) {
 
                 for (Element eltTitle : elt.getElementsByTag("titleproper")) {
                     MetadataType typeTitle = prefs.getMetadataTypeByName("TitleDocMain");
@@ -374,7 +372,7 @@ public class SGMLParser {
 
             }
 
-            if (strName.equalsIgnoreCase("publicationstmt")) {
+            if ("publicationstmt".equalsIgnoreCase(strName)) {
 
                 for (Element eltTitle : elt.getElementsByTag("pubplace")) {
                     MetadataType typeTitle = prefs.getMetadataTypeByName("PlaceOfPublication");
@@ -402,6 +400,7 @@ public class SGMLParser {
 
     /**
      * Check we are not just copying a metadatum
+     * 
      * @param docStruct
      * @param typeTitle
      * @param text
@@ -430,15 +429,15 @@ public class SGMLParser {
     private String getDocStructName(Element elt1) {
 
         String strName = elt1.text();
-        if (strName.equalsIgnoreCase("[Gesamttitelblatt]") || strName.equalsIgnoreCase("[Titelblatt]")) {
+        if ("[Gesamttitelblatt]".equalsIgnoreCase(strName) || "[Titelblatt]".equalsIgnoreCase(strName)) {
 
             return "TitlePage";
         }
-        if (strName.equalsIgnoreCase("Vorwort")) {
+        if ("Vorwort".equalsIgnoreCase(strName)) {
 
             return "Preface";
         }
-        if (strName.equalsIgnoreCase("Inhaltsverzeichnis")) {
+        if ("Inhaltsverzeichnis".equalsIgnoreCase(strName)) {
 
             return "Index";
         }
@@ -446,7 +445,7 @@ public class SGMLParser {
         //otherwise:
         for (Element child : elt1.children()) {
 
-            if (child.tagName().equalsIgnoreCase("div")) {
+            if ("div".equalsIgnoreCase(child.tagName())) {
                 return "PartOfWork";
             }
         }
@@ -554,7 +553,7 @@ public class SGMLParser {
             document.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
 
         } catch (IOException e) {
-          log.error(e);
+            log.error(e);
         }
 
         return document;

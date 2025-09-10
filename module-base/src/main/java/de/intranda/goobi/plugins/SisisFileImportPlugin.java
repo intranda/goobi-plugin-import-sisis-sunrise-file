@@ -52,6 +52,7 @@ import ugh.exceptions.UGHException;
 @Log4j2
 public class SisisFileImportPlugin implements IImportPluginVersion2 {
 
+    private static final long serialVersionUID = 2051352108606757370L;
     @Getter
     private String title = "intranda_import_sisis_sunrise_file";
     @Getter
@@ -85,7 +86,6 @@ public class SisisFileImportPlugin implements IImportPluginVersion2 {
     SubnodeConfiguration myconfig;
     private MakeVolumeMap volMaker;
     private MakeMetsMods mmMaker;
-    private String collection;
 
     /**
      * Import plugin for MAB files
@@ -122,7 +122,6 @@ public class SisisFileImportPlugin implements IImportPluginVersion2 {
 
         if (myconfig != null) {
             runAsGoobiScript = myconfig.getBoolean("/runAsGoobiScript", false);
-            collection = myconfig.getString("/collection", "");
         }
     }
 
