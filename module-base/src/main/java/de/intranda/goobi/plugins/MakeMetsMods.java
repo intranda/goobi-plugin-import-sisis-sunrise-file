@@ -512,8 +512,20 @@ public class MakeMetsMods {
                                 if (logical.getAllMetadataByType(prefs.getMetadataTypeByName("TitleDocMain")).size() != 0) {
                                     md = metaMaker.getMetadata("OtherTitle", content);
                                 }
-                            }
+                            } else if ("DocLanguage".equals(md.getType().getName())) {
 
+                                String val = md.getValue();
+                                if (val.contains(";")) {
+                                    for (String part : val.split(";")) {
+                                        Metadata lang = new Metadata(md.getType());
+                                        lang.setValue(part);
+                                        logical.addMetadata(lang);
+                                    }
+                                } else {
+                                    logical.addMetadata(md);
+                                }
+
+                            }
                             if (md.getType().getIsPerson()) {
 
                                 logical.addPerson((Person) md);
