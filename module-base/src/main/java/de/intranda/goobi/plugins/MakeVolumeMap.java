@@ -3,22 +3,13 @@ package de.intranda.goobi.plugins;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.commons.configuration.SubnodeConfiguration;
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 
-import de.sub.goobi.config.ConfigurationHelper;
 import lombok.extern.log4j.Log4j2;
 
 /**
@@ -31,8 +22,8 @@ public class MakeVolumeMap {
     public ArrayList<String> lstFilesVol;
     private ArrayList<String> lstChildren;
 
-//    public String mapFile = "";
-//    public String reverseMapFile = "";
+    //    public String mapFile = "";
+    //    public String reverseMapFile = "";
     public HashMap<String, ArrayList<String>> map;
     public HashMap<String, String> revMap;
 
@@ -43,20 +34,21 @@ public class MakeVolumeMap {
      */
     public MakeVolumeMap(SubnodeConfiguration config) {
 
-        lstFilesVol = new ArrayList<String>();
-        lstChildren = new ArrayList<String>();
-        map = new HashMap<String, ArrayList<String>>();
-        revMap = new HashMap<String, String>();
+        lstFilesVol = new ArrayList<>();
+        lstChildren = new ArrayList<>();
+        map = new HashMap<>();
+        revMap = new HashMap<>();
 
-//        String tempFolder = ConfigurationHelper.getInstance().getTemporaryFolder();
-//        this.mapFile = tempFolder + "mapMVW.txt";
-//        this.reverseMapFile = tempFolder + "mapChildren.txt";
+        //        String tempFolder = ConfigurationHelper.getInstance().getTemporaryFolder();
+        //        this.mapFile = tempFolder + "mapMVW.txt";
+        //        this.reverseMapFile = tempFolder + "mapChildren.txt";
 
     }
 
     /**
      * Make the child-parent HasMap
-     * @throws FileNotFoundException 
+     * 
+     * @throws FileNotFoundException
      */
     void makeReverseMap() throws FileNotFoundException {
 
@@ -67,8 +59,8 @@ public class MakeVolumeMap {
                 revMap.put(child, parent);
             }
         }
-        
-//        saveGson();
+
+        //        saveGson();
     }
 
     /**
@@ -134,17 +126,17 @@ public class MakeVolumeMap {
 
             try {
                 //get current id
-                if (tag.equals("0000")) {
+                if ("0000".equals(tag)) {
                     int iValue = str.indexOf(":");
                     strIdCurrent = str.substring(iValue + 1, str.length()).trim();
                 }
 
-                if (tag.equals("0001")) {
+                if ("0001".equals(tag)) {
                     int iValue = str.indexOf(":");
                     str1 = str.substring(iValue + 1, str.length()).trim();
                 }
 
-                if (tag.equals("0004")) {
+                if ("0004".equals(tag)) {
                     int iValue = str.indexOf(":");
 
                     //if no 1, use 4 instead:
@@ -155,10 +147,10 @@ public class MakeVolumeMap {
                     }
                 }
 
-                if (tag.equals("9999")) {
+                if ("9999".equals(tag)) {
 
                     if (!str1.isEmpty() && !map.keySet().contains(str1)) {
-                        map.put(str1, new ArrayList<String>());
+                        map.put(str1, new ArrayList<>());
                     }
 
                     if (!str1.isEmpty() && map.keySet().contains(str1)) {
@@ -228,25 +220,25 @@ public class MakeVolumeMap {
 
             try {
                 //get current id
-                if (tag.equals("0000")) {
+                if ("0000".equals(tag)) {
                     int iValue = str.indexOf(":");
                     strIdCurrent = str.substring(iValue + 1, str.length()).trim();
                 }
 
-                if (tag.equals("0001")) {
+                if ("0001".equals(tag)) {
                     int iValue = str.indexOf(":");
                     str.substring(iValue + 1, str.length()).trim();
                 }
 
-                if (tag.equals("0004")) {
+                if ("0004".equals(tag)) {
                     int iValue = str.indexOf(":");
                     str4 = str.substring(iValue + 1, str.length()).trim();
                 }
 
-                if (tag.equals("9999")) {
+                if ("9999".equals(tag)) {
 
                     if (!str4.isEmpty() && !map.keySet().contains(str4) && !lstChildren.contains(str4)) {
-                        map.put(str4, new ArrayList<String>());
+                        map.put(str4, new ArrayList<>());
                     }
 
                     if (!str4.isEmpty() && map.keySet().contains(str4) && !lstChildren.contains(strIdCurrent)) {
@@ -268,34 +260,34 @@ public class MakeVolumeMap {
             }
         }
     }
-//
-//    private void saveGson() throws FileNotFoundException {
-//        Gson gson = new Gson();
-//        String str = gson.toJson(map);
-//
-//        try (PrintWriter out = new PrintWriter(mapFile)) {
-//            out.println(str);
-//        }
-//
-//        String str2 = gson.toJson(revMap);
-//
-//        try (PrintWriter out = new PrintWriter(reverseMapFile)) {
-//            out.println(str2);
-//        }
-//    }
-//    
-//    public void readJson() throws JsonIOException, JsonSyntaxException, FileNotFoundException {
-//
-//        Gson gson = new Gson();
-//        Type typeMap = new TypeToken<HashMap<String, List<String>>>() {
-//        }.getType();
-//        Type typeRevMap = new TypeToken<HashMap<String, String>>() {
-//        }.getType();
-//
-//        
-//        this.map = gson.fromJson(new FileReader(mapFile), typeMap);
-//        this.revMap = gson.fromJson(new FileReader(reverseMapFile), typeRevMap);
-//
-//    }
+    //
+    //    private void saveGson() throws FileNotFoundException {
+    //        Gson gson = new Gson();
+    //        String str = gson.toJson(map);
+    //
+    //        try (PrintWriter out = new PrintWriter(mapFile)) {
+    //            out.println(str);
+    //        }
+    //
+    //        String str2 = gson.toJson(revMap);
+    //
+    //        try (PrintWriter out = new PrintWriter(reverseMapFile)) {
+    //            out.println(str2);
+    //        }
+    //    }
+    //
+    //    public void readJson() throws JsonIOException, JsonSyntaxException, FileNotFoundException {
+    //
+    //        Gson gson = new Gson();
+    //        Type typeMap = new TypeToken<HashMap<String, List<String>>>() {
+    //        }.getType();
+    //        Type typeRevMap = new TypeToken<HashMap<String, String>>() {
+    //        }.getType();
+    //
+    //
+    //        this.map = gson.fromJson(new FileReader(mapFile), typeMap);
+    //        this.revMap = gson.fromJson(new FileReader(reverseMapFile), typeRevMap);
+    //
+    //    }
 
 }
