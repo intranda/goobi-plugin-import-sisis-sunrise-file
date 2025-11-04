@@ -3,6 +3,10 @@ title: Import of Sisis SunRise Files
 identifier: intranda_import_sisis_sunrise_files
 published: true
 description: This is technical documentation for the plugin to import Sisis SunRise files to processes in Goobi workflow.
+keywords:
+    - Goobi workflow
+    - Plugin
+    - Import Plugin
 ---
 ## Introduction
 This documentation describes the installation, configuration and use of the plugin to import Sisis SunRise files.
