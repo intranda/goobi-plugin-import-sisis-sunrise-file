@@ -73,7 +73,7 @@ Die Konfiguration erfolgt über die Konfigurationsdatei `plugin_intranda_import_
         <defaultPublicationType>Monograph</defaultPublicationType>
 
         <!-- Collection name -->
-        <collection>Disserationen</collection>
+        <collection>Dissertationen</collection>
 
         <!-- Prefix to add to every ID number -->        
         <idPrefix>mpilhlt_sisis_</idPrefix>
